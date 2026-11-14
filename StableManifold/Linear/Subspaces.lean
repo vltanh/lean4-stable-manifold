@@ -29,27 +29,21 @@ needed), so `A` is injective on the unstable subspace (`injOn_unstableSubspace`)
 the space when `A` is hyperbolic is `ContinuousLinearMap.isCompl_stableSubspace_unstableSubspace`
 (`StableManifold.Linear.Splitting`).
 
-## Proofs (plan)
+## Proofs
 
-Size: 150–250 lines.
-
-* Invariance: `Aⁿ (A v) = A (Aⁿ v) → A 0 = 0` (`pow_succ'`, continuity of `A`); for the
+* Invariance: `Aⁿ (A v) = Aⁿ⁺¹ v → 0` (`pow_succ`, `tendsto_add_atTop_iff_nat`); for the
   unstable subspace, the backward orbit of `A v` is `0 ↦ A v`, `n + 1 ↦ w n`, and the backward
   orbit of `w 1` (a preimage of `v`) is `n ↦ w (n + 1)`.
 * `stableSubspace_symm`, `unstableSubspace_symm`: a backward orbit of `e` is unique,
-  `w n = e.symm^[n] v` (induction, `ContinuousLinearEquiv.symm_apply_apply`), and
-  `(e.symm : E →L[ℝ] E) ^ n` applied to `v` is that iterate; conversely `n ↦ (e.symm ^ n) v` is a
-  backward orbit. Symmetrically, a backward orbit of `e.symm` is the forward orbit of `e`.
-* `disjoint_stableSubspace_unstableSubspace`: let `V = Eₛ ⊓ Eᵤ`. `A` maps `V` into `V`, and onto
-  `V`: a preimage `w 1 ∈ Eᵤ` of `v ∈ V` lies in `Eₛ` since `Aⁿ⁺¹ (w 1) = Aⁿ v → 0`. So the
-  restriction `T : V →L[ℝ] V` (`ContinuousLinearMap.restrict`) is bijective, a continuous linear
-  equivalence (finite dimension, `LinearEquiv.ofBijective`). Every `Tⁿ v → 0` (as `v ∈ Eₛ`) and
-  every `T⁻ⁿ v → 0` (the backward orbit of `v` lies in `V` and is `n ↦ T⁻ⁿ v`). By
-  `exists_norm_pow_lt_one_of_tendsto`, `‖T ^ N‖ < 1` and `‖T⁻¹ ^ M‖ < 1`, so
-  `‖1‖ ≤ ‖T ^ (N M)‖ ‖T⁻¹ ^ (N M)‖ < 1` (`norm_pow_le'`), which forces `V = 0`
-  (`ContinuousLinearMap.norm_id` on a nontrivial space).
+  `w n = (e.symm ^ n) v` (induction, `pow_succ'`); conversely `n ↦ (e.symm ^ n) v` is a backward
+  orbit. Symmetrically, a backward orbit of `e.symm` is the forward orbit of `e`.
+* `disjoint_stableSubspace_unstableSubspace`: the restriction `T` of `A` to `Eₛ`
+  (`ContinuousLinearMap.restrict`, by invariance) has `Tⁿ x → 0` for every `x`, so
+  `‖Tⁿ‖ ≤ C rⁿ ≤ C` (`exists_norm_pow_le_mul_pow_of_tendsto`, finite dimension). If
+  `v ∈ Eₛ ⊓ Eᵤ` with backward orbit `w`, then `Aⁿ (w n) = v`, so `Aᵐ (w n) = Aᵐ⁻ⁿ v → 0` and
+  `w n ∈ Eₛ`; hence `‖v‖ = ‖Tⁿ (w n)‖ ≤ C ‖w n‖ → 0`, and `v = 0`.
 * `injOn_unstableSubspace`: if `v, v' ∈ Eᵤ` and `A v = A v'`, then `v - v' ∈ Eᵤ` and
-  `Aⁿ (v - v') = 0` for `n ≥ 1`, so `v - v' ∈ Eₛ ⊓ Eᵤ = 0`.
+  `Aⁿ⁺¹ (v - v') = 0`, so `v - v' ∈ Eₛ ⊓ Eᵤ = 0`.
 -/
 
 @[expose] public section
@@ -105,14 +99,21 @@ theorem mem_unstableSubspace {A : E →L[ℝ] E} {v : E} :
 Proof: `Aⁿ (A v) = A (Aⁿ v) → A 0 = 0`. -/
 theorem map_mem_stableSubspace {A : E →L[ℝ] E} {v : E} (hv : v ∈ A.stableSubspace) :
     A v ∈ A.stableSubspace := by
-  sorry
+  rw [mem_stableSubspace] at hv ⊢
+  refine ((tendsto_add_atTop_iff_nat 1).2 hv).congr fun n ↦ ?_
+  rw [pow_succ, mul_apply_eq_comp]
 
 /-- The unstable subspace is `A`-invariant.
 
 Proof: the backward orbit `0 ↦ A v`, `n + 1 ↦ w n`. -/
 theorem map_mem_unstableSubspace {A : E →L[ℝ] E} {v : E} (hv : v ∈ A.unstableSubspace) :
     A v ∈ A.unstableSubspace := by
-  sorry
+  obtain ⟨w, h0, hA, ht⟩ := hv
+  refine ⟨fun n ↦ match n with | 0 => A v | n + 1 => w n, rfl, fun n ↦ ?_,
+    (tendsto_add_atTop_iff_nat 1).1 ht⟩
+  cases n with
+  | zero => simp [h0]
+  | succ n => exact hA n
 
 /-- `A` maps the unstable subspace onto itself: a vector of the unstable subspace has a preimage
 in it.
@@ -120,7 +121,9 @@ in it.
 Proof: `w 1`, with the backward orbit `n ↦ w (n + 1)`. -/
 theorem exists_mem_unstableSubspace_apply_eq {A : E →L[ℝ] E} {v : E}
     (hv : v ∈ A.unstableSubspace) : ∃ w ∈ A.unstableSubspace, A w = v := by
-  sorry
+  obtain ⟨w, h0, hA, ht⟩ := hv
+  exact ⟨w 1, ⟨fun n ↦ w (n + 1), rfl, fun n ↦ hA (n + 1), (tendsto_add_atTop_iff_nat 1).2 ht⟩,
+    by rw [hA 0, h0]⟩
 
 /-- The stable subspace of `e⁻¹` is the unstable subspace of `e`.
 
@@ -128,14 +131,38 @@ Proof: a backward orbit of `e` is unique, `w n = e⁻ⁿ v`, so `v` lies in the 
 `e` if and only if `e⁻ⁿ v → 0`. -/
 theorem stableSubspace_symm (e : E ≃L[ℝ] E) :
     stableSubspace (e.symm : E →L[ℝ] E) = unstableSubspace (e : E →L[ℝ] E) := by
-  sorry
+  ext v
+  rw [mem_stableSubspace, mem_unstableSubspace]
+  constructor
+  · intro hv
+    refine ⟨fun n ↦ ((e.symm : E →L[ℝ] E) ^ n) v, by simp, fun n ↦ ?_, hv⟩
+    simp [pow_succ']
+  · rintro ⟨w, h0, hA, ht⟩
+    have hw : ∀ n, w n = ((e.symm : E →L[ℝ] E) ^ n) v := by
+      intro n
+      induction n with
+      | zero => simp [h0]
+      | succ n ih => rw [pow_succ', mul_apply_eq_comp, ← ih, ← hA n]; simp
+    exact ht.congr hw
 
 /-- The unstable subspace of `e⁻¹` is the stable subspace of `e`.
 
 Proof: a backward orbit of `e⁻¹` is unique, `w n = eⁿ v`. -/
 theorem unstableSubspace_symm (e : E ≃L[ℝ] E) :
     unstableSubspace (e.symm : E →L[ℝ] E) = stableSubspace (e : E →L[ℝ] E) := by
-  sorry
+  ext v
+  rw [mem_unstableSubspace, mem_stableSubspace]
+  constructor
+  · rintro ⟨w, h0, hA, ht⟩
+    have hw : ∀ n, w n = ((e : E →L[ℝ] E) ^ n) v := by
+      intro n
+      induction n with
+      | zero => simp [h0]
+      | succ n ih => rw [pow_succ', mul_apply_eq_comp, ← ih, ← hA n]; simp
+    exact ht.congr hw
+  · intro hv
+    refine ⟨fun n ↦ ((e : E →L[ℝ] E) ^ n) v, by simp, fun n ↦ ?_, hv⟩
+    simp [pow_succ']
 
 end General
 
@@ -151,12 +178,50 @@ def IsHyperbolic (A : E →L[ℝ] E) : Prop :=
 
 /-- In finite dimension the stable and unstable subspaces are **disjoint**, for every `A`.
 
-Proof: on `V = Eₛ ⊓ Eᵤ`, `A` restricts to a bijection `T` with `Tⁿ v → 0` and `T⁻ⁿ v → 0` for
-every `v`; by `exists_norm_pow_lt_one_of_tendsto` some powers of `T` and `T⁻¹` have norm `< 1`,
-so `‖1‖ < 1` on `V`, and `V = 0`. -/
+Proof: the powers of the restriction `T` of `A` to `Eₛ` are bounded, `‖Tⁿ‖ ≤ C`
+(`exists_norm_pow_le_mul_pow_of_tendsto`). A backward orbit `w` of `v ∈ Eₛ ⊓ Eᵤ` lies in `Eₛ`
+and `Aⁿ (w n) = v`, so `‖v‖ ≤ C ‖w n‖ → 0`. -/
 theorem disjoint_stableSubspace_unstableSubspace (A : E →L[ℝ] E) :
     Disjoint A.stableSubspace A.unstableSubspace := by
-  sorry
+  rw [Submodule.disjoint_def]
+  intro v hs hu
+  -- the restriction `T` of `A` to the stable subspace has bounded powers
+  let T : A.stableSubspace →L[ℝ] A.stableSubspace :=
+    A.restrict fun _ hx ↦ map_mem_stableSubspace hx
+  have hTn : ∀ (n : ℕ) (x : A.stableSubspace), ((T ^ n) x : E) = (A ^ n) x := by
+    intro n x
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [pow_succ', pow_succ', mul_apply_eq_comp, mul_apply_eq_comp, ← ih]
+      rfl
+  obtain ⟨C, r, hC1, hr0, hr1, hC⟩ := T.exists_norm_pow_le_mul_pow_of_tendsto fun x ↦ by
+    rw [tendsto_subtype_rng]
+    simp only [hTn, Submodule.coe_zero]
+    exact x.2
+  -- the backward orbit `w` of `v` lies in the stable subspace, and `Aⁿ (w n) = v`
+  obtain ⟨w, h0, hA, ht⟩ := hu
+  have hwA : ∀ n, (A ^ n) (w n) = v := by
+    intro n
+    induction n with
+    | zero => simp [h0]
+    | succ n ih => rw [pow_succ, mul_apply_eq_comp, hA n, ih]
+  have hws : ∀ n, w n ∈ A.stableSubspace := by
+    intro n
+    rw [mem_stableSubspace, ← tendsto_add_atTop_iff_nat n]
+    refine hs.congr fun m ↦ ?_
+    rw [pow_add, mul_apply_eq_comp, hwA]
+  -- so `‖v‖ ≤ C ‖w n‖ → 0`
+  have hle : ∀ n, ‖v‖ ≤ C * ‖w n‖ := by
+    intro n
+    have hrn : r ^ n ≤ 1 := pow_le_one₀ hr0.le hr1.le
+    calc ‖v‖ = ‖(T ^ n) ⟨w n, hws n⟩‖ := by rw [← Submodule.norm_coe, hTn, hwA]
+      _ ≤ ‖T ^ n‖ * ‖w n‖ := (T ^ n).le_opNorm _
+      _ ≤ C * ‖w n‖ := by
+        gcongr
+        exact (hC n).trans (mul_le_of_le_one_right (by linarith) hrn)
+  have := ge_of_tendsto' (ht.norm.const_mul C) hle
+  simpa using this
 
 /-- `A` is injective on its unstable subspace.
 
@@ -164,7 +229,13 @@ Proof: if `A v = A v'` then `v - v' ∈ Eᵤ` and `Aⁿ (v - v') = 0` for `n ≥
 `v - v' ∈ Eₛ ⊓ Eᵤ = 0` (`disjoint_stableSubspace_unstableSubspace`). -/
 theorem injOn_unstableSubspace (A : E →L[ℝ] E) :
     Set.InjOn A (A.unstableSubspace : Set E) := by
-  sorry
+  intro v hv v' hv' h
+  have hs : v - v' ∈ A.stableSubspace := by
+    rw [mem_stableSubspace, ← tendsto_add_atTop_iff_nat 1]
+    refine tendsto_const_nhds.congr fun n ↦ ?_
+    rw [pow_succ, mul_apply_eq_comp, map_sub, h, sub_self, map_zero]
+  exact sub_eq_zero.1 (Submodule.disjoint_def.1 (disjoint_stableSubspace_unstableSubspace A) _ hs
+    (sub_mem hv hv'))
 
 end FiniteDimensional
 

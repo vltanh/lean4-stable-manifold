@@ -38,26 +38,22 @@ for `μ : ℂ`).
 Mathlib has Gelfand's formula (`spectrum.pow_nnnorm_pow_one_div_tendsto_nhds_spectralRadius`, in
 the form `spectrum.spectralRadius_eq_gelfandRadius`) for complex Banach algebras.
 
-## Proofs (plan)
+## Proofs
 
-`exists_norm_pow_lt_one` is proved below. Size of the rest: 150–250 lines.
-
-* `exists_norm_pow_lt_one_of_aeval_eq_zero`: as `exists_norm_pow_lt_one`, with the private lemma
-  `exists_entry_bound` (stated for a complex matrix whose spectrum lies in the open unit disk).
-  For the complexified matrix `M` of `A`, `spectrum.subset_polynomial_aeval` gives
-  `q(z) ∈ spectrum ℂ (aeval M q)` for `z ∈ spectrum ℂ M`; and `aeval M q = 0`, since
-  `LinearMap.toMatrix` (`LinearMap.toMatrixAlgEquiv`) and the entrywise map `ℝ → ℂ`
-  (`AlgHom.mapMatrix`) are algebra homomorphisms (`Polynomial.aeval_algHom_apply`,
-  `Polynomial.aeval_algEquiv`). The spectrum of `0` is `{0}` (`spectrum.zero_eq`), so `q(z) = 0`
-  and `‖z‖ < 1`.
+* `exists_norm_pow_lt_one`: complexify the matrix of `A` in a basis and apply Gelfand's formula
+  to it (private lemma `exists_entry_bound`).
+* `exists_norm_pow_lt_one_of_aeval_eq_zero` reduces to `exists_norm_pow_lt_one`: a complex root
+  `μ` of the characteristic polynomial lies in the spectrum of the complexified matrix `M` of `A`,
+  so `q(μ) ∈ spectrum ℂ (aeval M q)` (`spectrum.subset_polynomial_aeval`); and `aeval M q = 0`,
+  since `LinearMap.toMatrixAlgEquiv` and the entrywise map `ℝ → ℂ` (`AlgHom.mapMatrix`) are
+  algebra homomorphisms (`Polynomial.aeval_algHom_apply`, `Polynomial.aeval_algEquiv`). The
+  spectrum of `0` lies in `{0}`, so `q(μ) = 0` and `‖μ‖ < 1`.
 * `exists_norm_pow_lt_one_of_tendsto`: with a basis `b` (`Module.finBasis`),
-  `Module.Basis.opNorm_le` bounds `‖Aⁿ‖` by a constant times `maxᵢ ‖Aⁿ (b i)‖`, which tends to `0`;
-  so `‖Aⁿ‖ < 1` for some large `n`.
-* `exists_norm_pow_le_mul_pow`: let `ρ = max (1/2) ‖A ^ N‖ < 1` and `r = ρ ^ (1 / N)` (real power).
-  Write `n = N q + j` with `j < N` (`Nat.div_add_mod`); then
-  `‖Aⁿ‖ ≤ ‖A ^ N‖ ^ q ‖A ^ j‖ ≤ ρ ^ q K ≤ (K / ρ) rⁿ` with `K = max 1 (max_{j < N} ‖A ^ j‖)`
-  (`norm_pow_le'`, `Real.rpow_natCast`, `Real.rpow_mul`).
-* The two combinations: compose the lemmas above.
+  `Module.Basis.exists_opNorm_le` bounds `‖Aⁿ‖` by a constant times `∑ᵢ ‖Aⁿ (b i)‖ → 0`.
+* `exists_norm_pow_le_mul_pow`: let `ρ = max (1/2) ‖A ^ N‖ < 1` and `r = ρ ^ (1 / N)` (real
+  power), so that `r ^ N = ρ`. Write `n = N q + j` with `j < N` (`Nat.div_add_mod`); then
+  `‖Aⁿ‖ ≤ ρ ^ q ‖A ^ j‖ ≤ ρ ^ q K ≤ (K / ρ) rⁿ` with `K = 1 + ∑_{j < N} ‖A ^ j‖`.
+* The two combinations compose the lemmas above.
 -/
 
 @[expose] public section
@@ -139,28 +135,67 @@ theorem exists_norm_pow_lt_one (A : E →L[ℝ] E)
   obtain ⟨N, hN⟩ := eventually_atTop.1 (hT.norm.eventually (gt_mem_nhds (a := (1 : ℝ)) (by simp)))
   exact ⟨N + 1, N.succ_pos, hN (N + 1) (by omega)⟩
 
+/-- The complex eigenvalues of `A` (the complex roots of its characteristic polynomial) are roots
+of every real polynomial annihilating `A`.
+
+Proof: such a root `μ` lies in the spectrum of the complexified matrix `M` of `A`
+(`Matrix.mem_spectrum_iff_isRoot_charpoly`), so `q(μ)` lies in the spectrum of `aeval M q`
+(`spectrum.subset_polynomial_aeval`); and `aeval M q = 0`, since the matrix of a linear map
+(`LinearMap.toMatrixAlgEquiv`) and the entrywise map `ℝ → ℂ` (`AlgHom.mapMatrix`) are algebra
+homomorphisms. The spectrum of `0` is contained in `{0}`. -/
+private lemma aeval_eq_zero_of_aeval_charpoly_eq_zero (A : E →L[ℝ] E) {q : Polynomial ℝ}
+    (hq : Polynomial.aeval (A : E →ₗ[ℝ] E) q = 0) {μ : ℂ}
+    (hμ : Polynomial.aeval μ (LinearMap.charpoly (A : E →ₗ[ℝ] E)) = 0) :
+    Polynomial.aeval μ q = 0 := by
+  classical
+  let b := Module.finBasis ℝ E
+  let M := (LinearMap.toMatrix b b (A : E →ₗ[ℝ] E)).map (algebraMap ℝ ℂ)
+  have hz : μ ∈ spectrum ℂ M := by
+    rwa [Matrix.mem_spectrum_iff_isRoot_charpoly, Polynomial.IsRoot.def, Matrix.charpoly_map,
+      LinearMap.charpoly_toMatrix, Polynomial.eval_map_algebraMap]
+  have h0 : Polynomial.aeval M q = 0 := by
+    have hM : M = (Algebra.ofId ℝ ℂ).mapMatrix (LinearMap.toMatrixAlgEquiv b A) := rfl
+    rw [hM, Polynomial.aeval_algHom_apply, Polynomial.aeval_algEquiv, AlgHom.comp_apply, hq]
+    simp [Matrix.map_zero _ (map_zero _)]
+  have h := spectrum.subset_polynomial_aeval _ (q.map (algebraMap ℝ ℂ)) ⟨μ, hz, rfl⟩
+  rw [Polynomial.aeval_map_algebraMap, h0] at h
+  rw [← Polynomial.eval_map_algebraMap]
+  obtain hs | hs :=
+    subsingleton_or_nontrivial (Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℂ)
+  · simp [spectrum.of_subsingleton] at h
+  · rwa [spectrum.zero_eq, Set.mem_singleton_iff] at h
+
 /-- If a linear operator `A` of a finite-dimensional real normed space is annihilated by a real
 polynomial `q` whose complex roots all have modulus `< 1`, then some power `A ^ N`, `N ≥ 1`, has
 operator norm `< 1`. (The hypothesis on the roots forces `q ≠ 0`.)
 
-Proof: as `exists_norm_pow_lt_one`, with the spectrum of the complexified matrix `M` of `A`
-contained in the roots of `q`: `spectrum.subset_polynomial_aeval` gives
-`q(z) ∈ spectrum ℂ (aeval M q) = spectrum ℂ 0 ⊆ {0}` for `z ∈ spectrum ℂ M`, since `aeval M q` is
-the complexified matrix of `aeval A q = 0`. -/
+Proof: the complex eigenvalues of `A` are roots of `q`, so `exists_norm_pow_lt_one` applies. -/
 theorem exists_norm_pow_lt_one_of_aeval_eq_zero (A : E →L[ℝ] E) {q : Polynomial ℝ}
     (hq : Polynomial.aeval (A : E →ₗ[ℝ] E) q = 0)
     (hroots : ∀ μ : ℂ, Polynomial.aeval μ q = 0 → ‖μ‖ < 1) :
-    ∃ N : ℕ, 0 < N ∧ ‖A ^ N‖ < 1 := by
-  sorry
+    ∃ N : ℕ, 0 < N ∧ ‖A ^ N‖ < 1 :=
+  A.exists_norm_pow_lt_one fun _ hμ ↦ hroots _ (aeval_eq_zero_of_aeval_charpoly_eq_zero A hq hμ)
 
 /-- In finite dimension, if every orbit `Aⁿ v` tends to `0`, then some power `A ^ N`, `N ≥ 1`, has
 operator norm `< 1`.
 
-Proof: with a basis `b`, `Module.Basis.opNorm_le` gives `‖Aⁿ‖ ≤ K maxᵢ ‖Aⁿ (b i)‖ → 0`. -/
+Proof: with a basis `b`, `Module.Basis.exists_opNorm_le` gives `‖Aⁿ‖ ≤ K ∑ᵢ ‖Aⁿ (b i)‖ → 0`. -/
 theorem exists_norm_pow_lt_one_of_tendsto (A : E →L[ℝ] E)
     (hA : ∀ v, Tendsto (fun n : ℕ ↦ (A ^ n) v) atTop (𝓝 0)) :
     ∃ N : ℕ, 0 < N ∧ ‖A ^ N‖ < 1 := by
-  sorry
+  let b := Module.finBasis ℝ E
+  obtain ⟨C, -, hC⟩ := b.exists_opNorm_le (F := E)
+  -- `‖Aⁿ‖ ≤ C ∑ᵢ ‖Aⁿ (b i)‖ → 0`
+  have hs : Tendsto (fun n : ℕ ↦ ∑ i, ‖(A ^ n) (b i)‖) atTop (𝓝 0) := by
+    simpa using tendsto_finsetSum Finset.univ fun i _ ↦ (hA (b i)).norm
+  have hT : Tendsto (fun n : ℕ ↦ ‖A ^ n‖) atTop (𝓝 0) := by
+    refine squeeze_zero (fun n ↦ norm_nonneg _)
+      (fun n ↦ hC (Finset.sum_nonneg fun i _ ↦ norm_nonneg _) fun i ↦
+        Finset.single_le_sum (f := fun i ↦ ‖(A ^ n) (b i)‖) (fun i _ ↦ norm_nonneg _)
+          (Finset.mem_univ i)) ?_
+    simpa using hs.const_mul C
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hT.eventually (gt_mem_nhds (a := (1 : ℝ)) (by simp)))
+  exact ⟨N + 1, N.succ_pos, hN (N + 1) (by omega)⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **Geometric decay** from one contracting power: if `‖A ^ N‖ < 1` with `N ≥ 1`, then
@@ -170,7 +205,40 @@ Proof: with `ρ = max (1/2) ‖A ^ N‖` and `r = ρ ^ (1 / N)`, write `n = N q 
 `‖Aⁿ‖ ≤ ρ ^ q K ≤ (K / ρ) rⁿ`, where `K` bounds `‖A ^ j‖` for `j < N`. -/
 theorem exists_norm_pow_le_mul_pow (A : E →L[ℝ] E) {N : ℕ} (hN : 0 < N) (hA : ‖A ^ N‖ < 1) :
     ∃ C r : ℝ, 1 ≤ C ∧ 0 < r ∧ r < 1 ∧ ∀ n : ℕ, ‖A ^ n‖ ≤ C * r ^ n := by
-  sorry
+  set ρ := max (1 / 2) ‖A ^ N‖
+  have hρ0 : 0 < ρ := lt_max_of_lt_left (by norm_num)
+  have hρ1 : ρ < 1 := max_lt (by norm_num) hA
+  set K := 1 + ∑ j ∈ Finset.range N, ‖A ^ j‖
+  have hK1 : 1 ≤ K := le_add_of_nonneg_right (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
+  have hKj : ∀ j < N, ‖A ^ j‖ ≤ K := fun j hj ↦
+    (Finset.single_le_sum (f := fun j ↦ ‖A ^ j‖) (fun j _ ↦ norm_nonneg _)
+      (Finset.mem_range.2 hj)).trans (le_add_of_nonneg_left zero_le_one)
+  set r := ρ ^ (1 / (N : ℝ))
+  have hr0 : 0 < r := Real.rpow_pos_of_pos hρ0 _
+  have hr1 : r < 1 := Real.rpow_lt_one hρ0.le hρ1 (by positivity)
+  have hrN : r ^ N = ρ := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hρ0.le, one_div_mul_cancel (by positivity),
+      Real.rpow_one]
+  -- along the multiples of `N`
+  have hq : ∀ q j : ℕ, ‖A ^ (N * q + j)‖ ≤ ρ ^ q * ‖A ^ j‖ := by
+    intro q j
+    induction q with
+    | zero => simp
+    | succ q ih =>
+      calc ‖A ^ (N * (q + 1) + j)‖ = ‖A ^ N * A ^ (N * q + j)‖ := by
+            rw [← pow_add]; congr 2; ring
+        _ ≤ ‖A ^ N‖ * ‖A ^ (N * q + j)‖ := norm_mul_le _ _
+        _ ≤ ρ * (ρ ^ q * ‖A ^ j‖) := by gcongr; exact le_max_right _ _
+        _ = ρ ^ (q + 1) * ‖A ^ j‖ := by ring
+  refine ⟨K / ρ, r, (one_le_div hρ0).2 (by linarith), hr0, hr1, fun n ↦ ?_⟩
+  obtain ⟨q, j, hj, rfl⟩ : ∃ q j, j < N ∧ n = N * q + j :=
+    ⟨n / N, n % N, Nat.mod_lt _ hN, (Nat.div_add_mod n N).symm⟩
+  calc ‖A ^ (N * q + j)‖ ≤ ρ ^ q * K := (hq q j).trans (by gcongr; exact hKj j hj)
+    _ = K / ρ * (ρ ^ q * r ^ N) := by rw [hrN]; field_simp
+    _ ≤ K / ρ * (ρ ^ q * r ^ j) := by
+      have := pow_le_pow_of_le_one hr0.le hr1.le hj.le
+      gcongr
+    _ = K / ρ * r ^ (N * q + j) := by rw [pow_add, pow_mul, hrN]
 
 /-- In finite dimension, if every orbit `Aⁿ v` tends to `0`, then `‖Aⁿ‖ ≤ C rⁿ` for all `n`, with
 `1 ≤ C` and `0 < r < 1`.
@@ -178,8 +246,9 @@ theorem exists_norm_pow_le_mul_pow (A : E →L[ℝ] E) {N : ℕ} (hN : 0 < N) (h
 Proof: `exists_norm_pow_lt_one_of_tendsto` and `exists_norm_pow_le_mul_pow`. -/
 theorem exists_norm_pow_le_mul_pow_of_tendsto (A : E →L[ℝ] E)
     (hA : ∀ v, Tendsto (fun n : ℕ ↦ (A ^ n) v) atTop (𝓝 0)) :
-    ∃ C r : ℝ, 1 ≤ C ∧ 0 < r ∧ r < 1 ∧ ∀ n : ℕ, ‖A ^ n‖ ≤ C * r ^ n := by
-  sorry
+    ∃ C r : ℝ, 1 ≤ C ∧ 0 < r ∧ r < 1 ∧ ∀ n : ℕ, ‖A ^ n‖ ≤ C * r ^ n :=
+  let ⟨_, hN, hAN⟩ := A.exists_norm_pow_lt_one_of_tendsto hA
+  A.exists_norm_pow_le_mul_pow hN hAN
 
 /-- If `A` is annihilated by a real polynomial whose complex roots all have modulus `< 1`, then
 every orbit `Aⁿ v` tends to `0`.
@@ -190,6 +259,10 @@ theorem tendsto_pow_apply_of_aeval_eq_zero (A : E →L[ℝ] E) {q : Polynomial �
     (hq : Polynomial.aeval (A : E →ₗ[ℝ] E) q = 0)
     (hroots : ∀ μ : ℂ, Polynomial.aeval μ q = 0 → ‖μ‖ < 1) (v : E) :
     Tendsto (fun n : ℕ ↦ (A ^ n) v) atTop (𝓝 0) := by
-  sorry
+  obtain ⟨N, hN, hAN⟩ := A.exists_norm_pow_lt_one_of_aeval_eq_zero hq hroots
+  obtain ⟨C, r, -, hr0, hr1, hC⟩ := A.exists_norm_pow_le_mul_pow hN hAN
+  refine squeeze_zero_norm (fun n ↦ ((A ^ n).le_opNorm v).trans
+    (mul_le_mul_of_nonneg_right (hC n) (norm_nonneg v))) ?_
+  simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one hr0.le hr1).const_mul C).mul_const ‖v‖
 
 end ContinuousLinearMap
