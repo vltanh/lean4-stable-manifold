@@ -1,5 +1,7 @@
 # The stable manifold theorem in Lean
 
+[![Lean Action CI](https://github.com/vltanh/lean4-stable-manifold/actions/workflows/lean_action_ci.yml/badge.svg)](https://github.com/vltanh/lean4-stable-manifold/actions/workflows/lean_action_ci.yml)
+
 The stable manifold theorem in Lean 4 with Mathlib, for a `Cⁿ` map (`1 ≤ n ≤ ∞`) near a
 hyperbolic fixed point `p` of a finite-dimensional real normed space: in every small neighborhood
 of `p`, the local stable set is the graph of a `Cⁿ` map from the stable subspace to the unstable
@@ -83,7 +85,7 @@ the following.
 
 ## Using it from another Lake project
 
-Add to the `lakefile.toml` of your project (the repository is not published yet):
+Add to the `lakefile.toml` of your project:
 
 ```toml
 [[require]]
