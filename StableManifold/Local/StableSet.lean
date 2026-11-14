@@ -36,28 +36,28 @@ Ingredients:
   (it contains the ball of radius `r / (2 C)` when `U` contains the ball of radius `r`, by the
   decay estimate `Perturbation.norm_iterate_le`).
 
-## Proofs (plan)
+## Proofs
 
-Size: 300–450 lines.
-
-* `localStableSet_eq_image_add`: `Function.localStableSet_conj` with the homeomorphism
-  `Homeomorph.addLeft p`.
-* `localStableSet_map_eq`: an orbit in the bounded `U` is bounded, so `(1 - P) x = graph x`
-  (`bddOrbit_iff`); conversely such orbits tend to `0` (`tendsto_iterate`).
+* `localStableSet_eq_image_add`: `Function.localStableSet_conj` for the translation
+  `Homeomorph.addLeft p`, with `(p + ·) '' ((p + ·) ⁻¹' U) = U` (`Set.image_preimage_eq`).
+* `localStableSet_map_eq`: a forward orbit in the bounded `U` is bounded, so `(1 - P) x = graph x`
+  (`Perturbation.bddOrbit_iff`); conversely, the orbits starting on the graph tend to `0`
+  (`Perturbation.tendsto_iterate`).
 * `stableGraph`: `graph ξ ∈ Eᵤ` since `P (graph ξ) = 0` (`proj_graph`, `proj_apply_eq_zero_iff`).
-  `contDiff_stableGraph`: `stableGraph = πᵤ ∘ graph ∘ ιₛ`, where `ιₛ = Eₛ.subtypeL` and `πᵤ` is
-  `1 - P` co-restricted to `Eᵤ` (`ContinuousLinearMap.codRestrict`), the identity on `Eᵤ`;
-  `contDiff_graph`. `fderiv_stableGraph_zero`: the same composition and `hasFDerivAt_graph_zero`.
-* `exists_localStableSet_map_eq_image`: take `Vₛ = {ξ | ∀ n, F^[n] (ξ + stableGraph ξ) ∈ U}`; a
-  point `x` of `localStableSet_map_eq` is `P x + graph (P x)` with `P x ∈ Eₛ`
-  (`range_proj`, `graph_proj`); `Vₛ` contains the ball of radius `r / (2 C)` by
-  `norm_iterate_le` (`P ξ = ξ` on `Eₛ`, `proj_apply_eq_self_iff`).
-* `Function.exists_localStableSet_eq_graph_of_isCompl`: `A = fderiv ℝ f p`, a splitting `S`
-  (`nonempty_hyperbolicSplitting`); `g x = f (p + x) - p` is `Cⁿ` near `0` with derivative `A`
-  (`HasFDerivAt.comp`, `ContDiffOn.comp`, `ContDiffAt.hasStrictFDerivAt`); cut off with
-  `η = (1 / (2 S.bound)).toNNReal` (`exists_contDiff_lipschitzWith_eqOn_ball`) to get a
-  `Perturbation S` equal to `g` on `ball 0 δ`, and `hₛ = stableGraph`. For `U ⊆ ball p δ`:
-  `localStableSet_eq_image_add`, `Function.localStableSet_congr` (on `(p + ·) ⁻¹' U ⊆ ball 0 δ`),
+  `contDiff_stableGraph`, `fderiv_stableGraph_zero`: `stableGraph = πᵤ ∘ graph ∘ ιₛ`, with
+  `ιₛ = Eₛ.subtypeL` and `πᵤ` the map `1 - P` co-restricted to `Eᵤ` (`codRestrict`); then
+  `contDiff_graph`, resp. `hasFDerivAt_graph_zero` and the chain rule.
+* `exists_localStableSet_map_eq_image`: `Vₛ = {ξ | ∀ n, F^[n] (ξ + stableGraph ξ) ∈ U}`. A point
+  `x` of the set in `localStableSet_map_eq` is `P x + graph (P x)` with `P x ∈ Eₛ` (`graph_proj`,
+  `proj_apply_eq_self_iff`), and conversely every `ξ + graph ξ` lies on the graph. If `U`
+  contains the ball of radius `r`, then `Vₛ` contains the ball of radius `r / (2 C)`, since
+  `‖Fⁿ (ξ + graph ξ)‖ ≤ 2 C θⁿ ‖ξ‖ < r` there (`norm_iterate_le`).
+* `Function.exists_localStableSet_eq_graph_of_isCompl`: take a splitting `S` of `A = Df(p)`
+  (`nonempty_hyperbolicSplitting`). The translate `g x = f (p + x) - p` is `Cⁿ` near `0` with
+  derivative `A` at `0`; the cut-off (`exists_contDiff_lipschitzWith_eqOn_ball`, with
+  `η = 1 / (2 S.bound)`) gives a `Perturbation S` equal to `g` on `ball 0 δ`, and
+  `hₛ = stableGraph`. For `U ⊆ ball p δ`: `localStableSet_eq_image_add`,
+  `Function.localStableSet_congr` on `(p + ·) ⁻¹' U ⊆ ball 0 δ`,
   `exists_localStableSet_map_eq_image`, and `Set.image_image`.
 -/
 

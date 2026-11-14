@@ -25,32 +25,30 @@ is a globally small Lipschitz perturbation of its linear part, to which the glob
   `Dψ(0) = 0` satisfies `‖Dψ x‖ ≤ η` and `‖ψ x‖ ≤ η ‖x‖` on a small closed ball;
 * `StableManifold.exists_contDiff_lipschitzWith_eqOn_ball`: the cut-off.
 
-## Proofs (plan)
+## Proofs
 
-Size: about 100 lines of proof.
-
-* `exists_cutoff`: the bump `ContDiffBump (0 : E)` with `rIn = 1`, `rOut = 2` (the instance
-  `HasContDiffBump E` of finite dimension): `ContDiffBump.contDiff`,
-  `ContDiffBump.one_of_mem_closedBall`, `ContDiffBump.zero_of_le_dist`, `ContDiffBump.nonneg`,
-  `ContDiffBump.le_one`; its derivative is continuous (`ContDiff.continuous_fderiv`) with compact
-  support (`ContDiffBump.hasCompactSupport`, `HasCompactSupport.fderiv`), hence bounded
-  (`Continuous.bounded_above_of_compact_support`).
-* `exists_norm_fderiv_le_of_hasFDerivAt_zero`: `ψ` is `C¹` at every point of the open
-  neighborhood `interior W` of `0` (`ContDiffOn.contDiffAt`), so `fderiv ℝ ψ` is continuous at `0`
-  (`ContDiffAt.continuousAt_fderiv`) with value `0`; the bound on `ψ` follows from the mean value
-  inequality on the convex ball (`Convex.norm_image_sub_le_of_norm_fderiv_le`).
-* `exists_contDiff_lipschitzWith_eqOn_ball`: let `ψ = g - A` (derivative `0` at `0`), `M` bound
-  `‖Dρ‖`, `η' = η / (2 M + 1)`, and `r` as in the previous lemma for `η'`, with
-  `closedBall 0 r ⊆ interior W`; set `δ = r / 2` and `φ x = ρ (δ⁻¹ • x) • ψ x`.
-  - `φ = ψ` on `ball 0 δ` (`ρ = 1` there), so `g = A + φ`; `φ 0 = 0`; `Dφ(0) = Dψ(0) = 0`
-    (`HasFDerivAt.congr_of_eventuallyEq`).
-  - `Cⁿ`: `contDiff_iff_contDiffAt`; on `interior W` it is a product of `Cⁿ` maps
-    (`ContDiffAt.smul`, `ContDiffOn.contDiffAt`); on the open set `{x | 2 δ < ‖x‖}` it is `0`
-    (`ContDiffAt.congr_of_eventuallyEq`, `contDiffAt_const`); the two sets cover `E` since
-    `closedBall 0 (2 δ) ⊆ interior W`.
-  - Lipschitz: `Dφ x = ρ (δ⁻¹ • x) • Dψ x + (δ⁻¹ • Dρ (δ⁻¹ • x)).smulRight (ψ x)`
-    (`HasFDerivAt.smul`, `HasFDerivAt.comp`), so `‖Dφ x‖ ≤ η' + (M / δ) η' ‖x‖ ≤ η' (2 M + 1) = η`
-    for `‖x‖ ≤ 2 δ`, and `Dφ x = 0` for `‖x‖ > 2 δ`; then `lipschitzWith_of_nnnorm_fderiv_le`.
+* `exists_cutoff`: the bump function `ContDiffBump (0 : E)` with radii `1` and `2` (finite
+  dimension provides `HasContDiffBump E`), with `ContDiffBump.contDiff`, `one_of_mem_closedBall`,
+  `zero_of_le_dist`, `nonneg` and `le_one`. Its derivative is continuous
+  (`ContDiff.continuous_fderiv`) with compact support (`ContDiffBump.hasCompactSupport`,
+  `HasCompactSupport.fderiv`), hence bounded (`Continuous.bounded_above_of_compact_support`).
+* `exists_norm_fderiv_le_of_hasFDerivAt_zero`: `fderiv ℝ ψ` is continuous at `0`
+  (`ContDiffAt.continuousAt_fderiv`) with value `0`, so some ball `ball 0 ε` lies in
+  `{x | ‖Dψ x‖ < η} ∩ interior W`; take `r = ε / 2`. On `closedBall 0 r`, `ψ` is differentiable
+  (`ContDiffOn.contDiffAt` on `interior W`), and the mean value inequality between `0` and `x`
+  (`Convex.norm_image_sub_le_of_norm_fderiv_le`) gives `‖ψ x‖ ≤ η ‖x‖`.
+* `exists_contDiff_lipschitzWith_eqOn_ball`: let `ψ = g - A` (derivative `0` at `0`), `M` a bound
+  of `‖Dρ‖`, `η' = η / (2 M + 1)`, `r` as in the previous lemma for `η'`, `δ = r / 2`, and
+  `φ x = ρ (δ⁻¹ • x) • ψ x`.
+  - `φ = ψ` on `ball 0 δ`, where `ρ (δ⁻¹ • x) = 1`, so `g = A + φ` there; `φ 0 = 0`; and
+    `Dφ(0) = Dψ(0) = 0` (`HasFDerivAt.congr_of_eventuallyEq`).
+  - `Cⁿ` (`contDiff_iff_contDiffAt`): at a point with `‖x‖ ≤ r`, `φ` is a product of maps that are
+    `Cⁿ` there (`ContDiffAt.smul`, as `closedBall 0 r ⊆ interior W`); on the open set
+    `{x | r < ‖x‖}` it is `0` (`ContDiffAt.congr_of_eventuallyEq`, `contDiffAt_const`).
+  - Lipschitz: for `‖x‖ ≤ r`, `Dφ x = ρ (δ⁻¹ • x) • Dψ x + c'.smulRight (ψ x)` with
+    `c' = Dρ (δ⁻¹ • x) ∘ (δ⁻¹ • id)` (`HasFDerivAt.smul`, `HasFDerivAt.comp`), so
+    `‖Dφ x‖ ≤ η' + (M / δ) (η' · 2 δ) = η' (2 M + 1) = η`; for `‖x‖ > r`, `Dφ x = 0`. Then
+    `lipschitzWith_of_nnnorm_fderiv_le`.
 -/
 
 @[expose] public section

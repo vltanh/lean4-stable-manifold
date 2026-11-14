@@ -30,29 +30,34 @@ meets subtypes.
 * `HyperbolicSplitting.bound = 3 C / (1 - λ)` and `HyperbolicSplitting.decayRate = (1 + λ) / 2`:
   the constants of the Lyapunov–Perron estimates (`StableManifold.Perron.Operator`).
 
-## Proofs (plan)
+## Proofs
 
-Size: 300–450 lines. The algebraic identities are proved below or are one-line ring computations.
+The algebraic identities between `A`, `P` and `B` (`unstableInv_mul_one_sub_proj`,
+`mul_unstableInv_pow_succ`, `proj_mul_unstableInv_pow_succ`, …) and the bounds `‖P‖ ≤ C`,
+`‖1 - P‖ ≤ C` are short rewrites with the fields of the structure.
 
-* `proj_apply_eq_zero_iff`: if `P x = 0`, then `n ↦ Bⁿ x` is a backward orbit
-  (`A Bⁿ⁺¹ = (1 - P) Bⁿ`, `mul_unstableInv_pow_succ`) with `‖Bⁿ x‖ = ‖Bⁿ (1 - P) x‖ ≤ C λⁿ ‖x‖`;
-  conversely, for a backward orbit `w` of `x`, `P x = Aⁿ P (w n)`, of norm `≤ C ‖w n‖ → 0`.
-* `proj_apply_eq_self_iff`: if `P x = x` then `‖Aⁿ x‖ = ‖Aⁿ P x‖ ≤ C λⁿ ‖x‖`; conversely
-  `Bⁿ Aⁿ (1 - P) = 1 - P` (induction from `B A = 1 - P`, `B (1 - P) = B`, `A P = P A`), so
-  `‖(1 - P) x‖ = ‖Bⁿ (1 - P) Aⁿ x‖ ≤ C λⁿ ‖Aⁿ x‖ → 0`.
-* `range_proj`, `ker_proj`, `isCompl`: from the two characterizations and `P² = P`
-  (`LinearMap.IsIdempotentElem.isCompl`).
-* `nonempty_hyperbolicSplitting`: `P` is `Submodule.projection Eₛ Eᵤ h`, continuous in finite
-  dimension (`LinearMap.toContinuousLinearMap`); `A P = P A` since `A` preserves both subspaces
-  (`map_mem_stableSubspace`, `map_mem_unstableSubspace`). No restriction to the subspaces is
-  needed: `T = A (1 - P) + P` (`A` on `Eᵤ`, the identity on `Eₛ`) commutes with `P` and is
-  injective (`injOn_unstableSubspace`), hence invertible (`LinearEquiv.ofInjectiveEndo`,
-  `LinearEquiv.toContinuousLinearEquiv`), and `B = T⁻¹ (1 - P) = (1 - P) T⁻¹`; the identities
-  follow from `T P = P T = P` and `A (1 - P) = T (1 - P) = (1 - P) T`. Every orbit of `A P`
-  tends to `0` (`(A P)ⁿ⁺¹ = Aⁿ⁺¹ P`), and so does every orbit of `B` (`B v ∈ Eᵤ`, and on `Eᵤ`,
-  `n ↦ Bⁿ u` is the backward orbit of `u`), so `exists_norm_pow_le_mul_pow_of_tendsto` gives
-  `‖(A P)ⁿ‖ ≤ C₁ λ₁ⁿ` and `‖Bⁿ‖ ≤ C₂ λ₂ⁿ`. As `Aⁿ P = (A P)ⁿ P`,
-  `C = max C₁ C₂ * max 1 (max ‖P‖ ‖1 - P‖)` and `λ = max λ₁ λ₂` work.
+* `proj_apply_eq_self_iff`: if `P x = x`, then `‖Aⁿ x‖ = ‖(Aⁿ P) x‖ ≤ C λⁿ ‖x‖ → 0`. Conversely,
+  `Bⁿ (1 - P) Aⁿ = 1 - P` (induction on `n`, from `B (1 - P) = B` and `B A = 1 - P`), so for
+  `x ∈ Eₛ`, `‖(1 - P) x‖ = ‖Bⁿ (1 - P) (Aⁿ x)‖ ≤ C ‖Aⁿ x‖ → 0`.
+* `proj_apply_eq_zero_iff`: if `P x = 0`, then `n ↦ Bⁿ x` is a backward orbit of `x`
+  (`A Bⁿ⁺¹ = (1 - P) Bⁿ` and `P Bⁿ⁺¹ = 0`) with `‖Bⁿ x‖ = ‖Bⁿ (1 - P) x‖ ≤ C λⁿ ‖x‖`.
+  Conversely, a backward orbit `w` of `x` has `Aⁿ (w n) = x`, so `P x = (Aⁿ P) (w n)`
+  (`pow_mul_proj_comm`), of norm `≤ C ‖w n‖ → 0`.
+* `range_proj`, `ker_proj`: the two characterizations and `P² = P`. `isCompl`: the range and the
+  kernel of an idempotent are complementary (`LinearMap.IsIdempotentElem.isCompl`).
+* `nonempty_hyperbolicSplitting`: `P` is the projection onto `Eₛ` along `Eᵤ`
+  (`Submodule.projection`), continuous in finite dimension (`LinearMap.toContinuousLinearMap`),
+  and `A P = P A` since `A` preserves both subspaces (`map_mem_stableSubspace`,
+  `map_mem_unstableSubspace`). No restriction to the subspaces is needed: `T = A (1 - P) + P`
+  (`A` on `Eᵤ`, the identity on `Eₛ`) has `T P = P T = P` and is injective
+  (`injOn_unstableSubspace`), hence a continuous linear equivalence
+  (`LinearEquiv.ofInjectiveEndo`, `LinearEquiv.toContinuousLinearEquiv`). Then
+  `B = T⁻¹ (1 - P) = (1 - P) T⁻¹`, and `B A = A B = 1 - P`, `B P = P B = 0` follow from
+  `A (1 - P) = T (1 - P) = (1 - P) T`. Every orbit of `A P` tends to `0`, as
+  `(A P)ⁿ⁺¹ v = Aⁿ⁺¹ (P v)` with `P v ∈ Eₛ`; so does every orbit of `B`, as `B v ∈ Eᵤ` and, for
+  `u ∈ Eᵤ` with backward orbit `w`, `Bⁿ u = w n`. So `exists_norm_pow_le_mul_pow_of_tendsto`
+  gives `‖(A P)ⁿ‖ ≤ C₁ λ₁ⁿ` and `‖Bⁿ‖ ≤ C₂ λ₂ⁿ`; as `Aⁿ P = (A P)ⁿ P`, the constants
+  `C = max C₁ C₂ · max 1 (max ‖P‖ ‖1 - P‖)` and `λ = max λ₁ λ₂` work.
 -/
 
 @[expose] public section

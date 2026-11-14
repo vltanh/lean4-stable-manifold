@@ -34,28 +34,28 @@ Elementary facts:
 * `Function.localStableSet_congr`, `Function.localUnstableSet_congr`: the local sets of `f|_U`
   depend only on `f|_U`;
 * `Function.localStableSet_conj`, `Function.localUnstableSet_conj`: conjugating `f` by a
-  homeomorphism `e` carries the local sets along `e` (used with a translation, to move the fixed
-  point to `0`).
+  homeomorphism `e` carries the local sets along `e` (the first is used with a translation, to
+  move the fixed point to `0`).
 
-## Proofs (plan)
+## Proofs
 
-All proofs are short manipulations of the definitions; about 150 lines in all.
-
-* `eventually_iterate_mem_localStableSet`: `fⁿ x ∈ U` for `n ≥ N`; then
-  `f^[k] (f^[n] x) = f^[k + n] x ∈ U` (`Function.iterate_add_apply`) and tends to `p`
-  (`Filter.tendsto_add_atTop_iff_nat`).
-* `eventually_mem_localUnstableSet`: `y n ∈ U` for `n ≥ N`; use the backward orbit
-  `k ↦ y (n + k)`.
-* `localStableSet_symm_eq_localUnstableSet`: if `y n = e.symm^[n] x ∈ U ⊆ e.target`, then
-  `e (y (n + 1)) = e (e.symm (y n)) = y n` (`OpenPartialHomeomorph.right_inv`); conversely, if
-  `e (y (n + 1)) = y n` with `y (n + 1) ∈ U ⊆ e.source`, then `e.symm (y n) = y (n + 1)`
-  (`OpenPartialHomeomorph.left_inv`), so `y n = e.symm^[n] x` by induction.
-* `localStableSet_congr`: if the `f`-orbit of `x` stays in `U`, then `f^[n] x = g^[n] x` by
-  induction on `n` (`Function.iterate_succ_apply'`); symmetrically for `g`.
-  `localUnstableSet_congr`: `f (y (n + 1)) = g (y (n + 1))` since `y (n + 1) ∈ U`.
-* `localStableSet_conj`: `(e ∘ f ∘ e.symm)^[n] = e ∘ f^[n] ∘ e.symm`
-  (`Function.Semiconj.iterate_right`, or induction), `e y ∈ e '' U ↔ y ∈ U`, and `e`, `e.symm`
-  are continuous. `localUnstableSet_conj`: map backward orbits by `e` and by `e.symm`.
+* `eventually_iterate_mem_localStableSet`: `f^[m] x ∈ U` for `m ≥ N`; for `n ≥ N`, the orbit
+  `k ↦ f^[k] (f^[n] x) = f^[k + n] x` (`Function.iterate_add_apply`) stays in `U` and tends to
+  `p` (`Filter.tendsto_add_atTop_iff_nat`).
+* `eventually_mem_localUnstableSet`: `y m ∈ U` for `m ≥ N`; for `n ≥ N`, `k ↦ y (k + n)` is a
+  backward orbit of `y n` in `U` tending to `p`.
+* `localStableSet_symm_eq_localUnstableSet`: the orbit `n ↦ e.symm^[n] x` of a point of the
+  local stable set of `e.symm` is a backward `e`-orbit, as `U ⊆ e.target`
+  (`OpenPartialHomeomorph.right_inv`); conversely, a backward `e`-orbit `y` in `U ⊆ e.source`
+  has `e.symm (y n) = y (n + 1)` (`OpenPartialHomeomorph.left_inv`), so `y n = e.symm^[n] (y 0)`
+  by induction. The second equation is the first one for `e.symm`.
+* `localStableSet_congr`: along an `f`-orbit in `U`, `f^[n] x = g^[n] x` by induction on `n`
+  (`Function.iterate_succ_apply'`); symmetrically for `g`. `localUnstableSet_congr`: a backward
+  orbit `y` in `U` has `f (y (n + 1)) = g (y (n + 1))`.
+* `localStableSet_conj`: `(e ∘ f ∘ e.symm)^[n] (e x) = e (f^[n] x)`
+  (`Function.Semiconj.iterate_right`), `e y ∈ e '' U ↔ y ∈ U`, and `e`, `e.symm` are continuous.
+  `localUnstableSet_conj`: `e` maps a backward `f`-orbit in `U` to a backward orbit in `e '' U`,
+  and `e.symm` maps back; continuity of both carries the limits.
 -/
 
 @[expose] public section

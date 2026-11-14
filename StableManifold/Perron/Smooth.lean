@@ -30,32 +30,32 @@ hence `orbitSeq` and `graph = (1 - P) ∘ eval₀ ∘ orbitSeq`. This replaces t
 theorem and the `C^r` section theorem of Hirsch, Pugh and Shub: smoothness of every order comes
 from the smoothness of the superposition operator on bounded sequences.
 
-## Proofs (plan)
+## Proofs
 
-Size: 250–400 lines.
-
-* `approximatesLinearOn_perronSub`: `perronSub x - perronSub y - (x - y)` is
-  `-(perronOp (superpose φ x) - perronOp (superpose φ y))`, of norm
-  `≤ S.bound * L ‖x - y‖ ≤ ‖x - y‖ / 2` (`norm_perronOp_le`, `lipschitzWith_superpose`).
 * `subsingleton_or_lt_inv_nnnorm_refl`: on a nontrivial space `‖id‖₊ = 1`
-  (`ContinuousLinearMap.nnnorm_id`, `ContinuousLinearEquiv.coe_refl`).
-* `perronHomeomorph_apply`: by definition (`ApproximatesLinearOn.toHomeomorph`).
-* `orbitSeq_eq_perronHomeomorph_symm`: `perronHomeomorph (orbitSeq ξ) = stableOrbit ξ` is the fixed
-  point equation `perronMap_orbitSeq`; apply `Homeomorph.symm_apply_eq`.
-* `norm_perronOp_comp_applySeq_le`: `‖Dφ y‖ ≤ L`
-  (`norm_fderiv_le_of_lipschitz`), so `‖superpose (fderiv ℝ φ) x‖ ≤ L`
-  (`superpose_apply`, `BoundedContinuousFunction.norm_le`) and
-  `‖perronOp ∘L applySeq (…)‖ ≤ S.bound * L ≤ 1/2` (`ContinuousLinearMap.opNorm_comp_le`,
-  `norm_applySeq_le`).
-* `hasFDerivAt_perronSub`: `hasFDerivAt_superpose`, `HasFDerivAt.sub`, `hasFDerivAt_id`,
-  `ContinuousLinearMap.hasFDerivAt.comp`.
-* `contDiff_perronSub`: `contDiff_id.sub ((S.perronOp.contDiff).comp (contDiff_superpose hφ))`.
-* `contDiff_orbitSeq`: `orbitSeq = perronHomeomorph.symm ∘ stableOrbit`. For `n = 0`, continuity
-  (`contDiff_zero`). For `n ≥ 1`: `Homeomorph.contDiff_symm` with the derivative
-  `f₀' x = ContinuousLinearEquiv.unitsEquiv ℝ _ (Units.oneSub T hT)`, `‖T‖ < 1`
-  (`Units.oneSub`), composed with the continuous linear map `stableOrbit`.
+  (`ContinuousLinearMap.nnnorm_id`), and `1/2 < 1`.
+* `approximatesLinearOn_perronSub`: `perronSub x - perronSub y - (x - y)` is
+  `-perronOp (superpose φ x - superpose φ y)`, of norm `≤ S.bound L ‖x - y‖ ≤ ‖x - y‖ / 2`
+  (`norm_perronOp_le`, `lipschitzWith_superpose`, `lip_mul_bound_le`).
+* `perronHomeomorph`: `ApproximatesLinearOn.toHomeomorph` with the two lemmas above;
+  `perronHomeomorph_apply` holds by definition.
+* `orbitSeq_eq_perronHomeomorph_symm`: `perronHomeomorph (orbitSeq ξ) = stableOrbit ξ` is the
+  fixed point equation `perronMap_orbitSeq`; then `Homeomorph.symm_apply_eq`.
+* `norm_perronOp_comp_applySeq_le`: `‖Dφ y‖ ≤ L` (`norm_fderiv_le_of_lipschitz`), so
+  `‖superpose (fderiv ℝ φ) x‖ ≤ L` (`superpose_apply_of_bound`,
+  `BoundedContinuousFunction.norm_le`), and `‖perronOp ∘L applySeq (…)‖ ≤ S.bound L ≤ 1/2`
+  (`ContinuousLinearMap.opNorm_comp_le`, `norm_applySeq_le`).
+* `hasFDerivAt_perronSub`: `hasFDerivAt_id`, `hasFDerivAt_superpose` and the chain rule for the
+  continuous linear map `perronOp`. `contDiff_perronSub`: `contDiff_id`, `contDiff_superpose`
+  and `ContinuousLinearMap.contDiff`.
+* `contDiff_orbitSeq`: `orbitSeq = perronHomeomorph.symm ∘ stableOrbit`. For `n = 0` this is
+  continuity (`contDiff_zero`). For `n ≠ 0`, `φ` is `C¹`, and at every point the derivative
+  `1 - T` of `perronSub` has `‖T‖ ≤ 1/2 < 1`, so it is a unit (`Units.oneSub`), that is, a
+  continuous linear equivalence (`ContinuousLinearEquiv.unitsEquiv`); `Homeomorph.contDiff_symm`
+  makes `perronHomeomorph.symm` of class `Cⁿ`; compose with the continuous linear map
+  `stableOrbit`.
 * `contDiff_graph`: `graph = (1 - P) ∘ evalCLM ℝ 0 ∘ orbitSeq`
-  (`BoundedContinuousFunction.evalCLM`), a composition with continuous linear maps.
+  (`BoundedContinuousFunction.evalCLM`), compositions with continuous linear maps.
 -/
 
 @[expose] public section

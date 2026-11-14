@@ -30,28 +30,28 @@ differentiable in the sup norm. No compact support or global bound on `φ` is ne
 `E` and `G` live in the same universe, so that the induction on `n` can pass from `φ : E → G` to
 `fderiv ℝ φ : E → (E →L[ℝ] G)` (`StableManifold.Perron.Smooth` uses it with `G = E`).
 
-## Proofs (plan)
-
-Size: 300–500 lines.
+## Proofs
 
 * `exists_norm_sub_sub_fderiv_le`: `fderiv ℝ φ` is continuous (`ContDiff.continuous_fderiv`),
   hence uniformly continuous on the compact ball `closedBall 0 (R + 1)`
-  (`IsCompact.uniformContinuousOn_of_continuous`): take `δ ≤ 1` with
-  `‖Dφ z - Dφ a‖ ≤ ε` when `‖z - a‖ < δ` in that ball. Apply the mean value inequality
-  (`Convex.norm_image_sub_le_of_norm_fderiv_le'`, on the ball `ball a δ`) to `φ` and the linear
-  map `Dφ(a)`, that is, to `z ↦ φ z - Dφ(a) z`, whose derivative is `Dφ z - Dφ a`.
-* `hasFDerivAt_superpose`: with `R = ‖x‖`, the previous lemma gives, for `‖y‖ < δ`,
-  `‖superpose φ (x + y) - superpose φ x - applySeq (superpose (fderiv ℝ φ) x) y‖ ≤ ε ‖y‖`
-  (evaluate at each `n` with `superpose_apply`, `applySeq_apply`, then
-  `BoundedContinuousFunction.norm_le`); this is `HasFDerivAt`
-  (`hasFDerivAt_iff_isLittleO_nhds_zero`, `Asymptotics.isLittleO_iff`).
-* `contDiff_superpose`: for `n : ℕ`, induction on `n` generalizing `G` (in universe `u`):
-  `n = 0` is `continuous_superpose` (`contDiff_zero`); for `n + 1`, `contDiff_succ_iff_fderiv`,
-  with `fderiv ℝ (superpose φ) = applySeq ∘ superpose (fderiv ℝ φ)` (`fderiv_superpose`),
-  `applySeq` a continuous linear map (`ContinuousLinearMap.contDiff`, `ContDiff.comp`), and
-  `superpose (fderiv ℝ φ)` of class `Cⁿ` by the induction hypothesis applied to
-  `fderiv ℝ φ : E → (E →L[ℝ] G)`, which is `Cⁿ` (`ContDiff.fderiv_right`). For `n = ∞`,
-  `contDiff_infty`.
+  (`IsCompact.uniformContinuousOn_of_continuous`): take `δ` with `‖Dφ z - Dφ a‖ ≤ ε` when
+  `‖z - a‖ < δ` in that ball, and use `min δ 1`, so that `ball a (min δ 1)` lies in the ball. The
+  mean value inequality on `ball a (min δ 1)`, for `φ` and the linear map `Dφ(a)`
+  (`Convex.norm_image_sub_le_of_norm_fderiv_le'`), gives `‖φ (a + b) - φ a - Dφ(a) b‖ ≤ ε ‖b‖`.
+* `hasFDerivAt_superpose`: given `c > 0`, take `δ` from the previous lemma with `R = ‖x‖`. For
+  `‖y‖ < δ`, evaluating at each `n` (`superpose_apply`, `applySeq_apply`) and taking the sup
+  (`BoundedContinuousFunction.norm_le`) gives
+  `‖superpose φ (x + y) - superpose φ x - applySeq (superpose (fderiv ℝ φ) x) y‖ ≤ c ‖y‖`, which
+  is `HasFDerivAt` (`hasFDerivAt_iff_isLittleO_nhds_zero`, `Asymptotics.isLittleO_iff`).
+  `fderiv_superpose`: `HasFDerivAt.fderiv`.
+* `contDiff_superpose`: for `m : ℕ`, induction on `m`, generalizing `G` (in the universe `u`).
+  `m = 0` is `continuous_superpose` (`contDiff_zero`). For `m + 1`, by `contDiff_succ_iff_fderiv`
+  it suffices that `superpose φ` is differentiable (`hasFDerivAt_superpose`) and that
+  `fderiv ℝ (superpose φ) = applySeq ∘ superpose (fderiv ℝ φ)` (`fderiv_superpose`) is `Cᵐ`: the
+  continuous linear map `applySeq` is smooth, and `superpose (fderiv ℝ φ)` is `Cᵐ` by the
+  induction hypothesis for `fderiv ℝ φ : E → (E →L[ℝ] G)`, which is `Cᵐ`
+  (`contDiff_succ_iff_fderiv` again). For `n = ∞`, `contDiff_infty` reduces to the finite orders
+  (`ENat.recTopCoe`).
 -/
 
 @[expose] public section

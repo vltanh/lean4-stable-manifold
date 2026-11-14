@@ -29,32 +29,32 @@ of `e|_U` is the local stable set of `e⁻¹|_U` (`Function.localStableSet_symm_
 Since the local stable manifold theorem holds for every small neighborhood
 (`Function.exists_localStableSet_eq_graph_of_isCompl`), one `U` serves for `f` and `e⁻¹`.
 
-## Proofs (plan)
+## Proofs
 
-Size: 200–350 lines.
-
-* `exists_openPartialHomeomorph_contDiffOn_symm`: `f` is `Cⁿ` at the points of `interior W`
-  (`ContDiffOn.contDiffAt`), so `HasStrictFDerivAt f A p` (`ContDiffAt.hasStrictFDerivAt`, `n ≥ 1`)
-  and `HasStrictFDerivAt.toOpenPartialHomeomorph` gives `e` with `⇑e = f`. Restrict its source to
-  the open set of points of `interior W` where `fderiv ℝ f` is invertible
-  (`OpenPartialHomeomorph.restrOpen`; openness from `ContinuousLinearEquiv.isOpen` and continuity of
-  `fderiv ℝ f` on `interior W`, `ContDiffOn.continuousOn_fderiv_of_isOpen`). Then at each point `y`
-  of the target, `OpenPartialHomeomorph.contDiffAt_symm` gives `ContDiffAt ℝ n e.symm y`, whence
-  `ContDiffOn`; and `OpenPartialHomeomorph.hasFDerivAt_symm` (or
-  `HasStrictFDerivAt.to_localInverse`) gives the derivative `A⁻¹` at `f p`. This is pointwise, so
-  `n = ∞` needs no uniform neighborhood.
-* `exists_graph_ofEq`: `subst` (proved below).
-* `exists_localStableSet_localUnstableSet_eq_graph`: let `A = fderiv ℝ f p = ↑A'` (`hinv`) and
-  `e` the local homeomorphism; `g = e.symm` is `Cⁿ` on `e.target ∈ 𝓝 p`, `g p = p`
-  (`OpenPartialHomeomorph.left_inv`), `fderiv ℝ g p = ↑A'.symm` (`HasFDerivAt.fderiv`), so its
-  stable and unstable subspaces are `Eᵤ` and `Eₛ`, complementary
-  (`isCompl_stableSubspace_unstableSubspace`, `IsCompl.symm`). Apply
-  `exists_localStableSet_eq_graph_of_isCompl` to `f` (radius `δ₁`, map `hₛ`) and to `g` (radius
-  `δ₂`, map `hᵤ'`), and take `U = ball p (min δ₁ δ₂) ∩ e.source ∩ e.target`, open and containing
-  `p`. The stable side is immediate. For the unstable side,
-  `localUnstableSet f p U = localUnstableSet e p U` (`Function.localUnstableSet_congr`, `⇑e = f`)
-  `= localStableSet e.symm p U` (`Function.localStableSet_symm_eq_localUnstableSet`), a graph of
-  `hᵤ'` over the stable subspace of `fderiv ℝ g p`; transport it with `exists_graph_ofEq`.
+* `exists_openPartialHomeomorph_contDiffOn_symm`: `f` is `Cⁿ` at every point of `interior W`
+  (`ContDiffOn.contDiffAt`), so the inverse function theorem
+  (`ContDiffAt.toOpenPartialHomeomorph`) gives an open partial homeomorphism `e₀` with `⇑e₀ = f`
+  and `p` in its source. Its source is then restricted (`OpenPartialHomeomorph.restrOpen`) to the
+  points of `interior W` where `fderiv ℝ f` is invertible, an open set since `fderiv ℝ f` is
+  continuous there (`ContDiffOn.continuousOn_fderiv_of_isOpen`,
+  `ContinuousLinearMap.isOpen_setOfPred_isInvertible`). At each point of the target,
+  `OpenPartialHomeomorph.contDiffAt_symm` makes `e.symm` of class `Cⁿ`; the argument is
+  pointwise, so `n = ∞` needs no uniform neighborhood. The derivative `A⁻¹` of `e.symm` at `f p`
+  comes from `HasStrictFDerivAt.to_localInverse`.
+* `exists_graph_ofEq`: `subst`.
+* `exists_localStableSet_localUnstableSet_eq_graph`: write `fderiv ℝ f p = ↑A` (`hinv`) and let
+  `e` be the local inverse above. Then `e.symm` fixes `p` (`OpenPartialHomeomorph.left_inv`) and
+  has derivative `A⁻¹` there (`HasFDerivAt.fderiv`), so its stable and unstable subspaces are `Eᵤ`
+  and `Eₛ` (`ContinuousLinearMap.stableSubspace_symm`, `unstableSubspace_symm`), complementary by
+  `isCompl_stableSubspace_unstableSubspace` and `IsCompl.symm`. Apply
+  `exists_localStableSet_eq_graph_of_isCompl` to `f` (radius `δ₁`, map `hₛ`) and to `e.symm` on
+  `e.target` (radius `δ₂`, map `hᵤ`), and take `U = ball p (min δ₁ δ₂) ∩ e.source ∩ e.target`,
+  open and containing `p`. The stable side follows at once (`ContDiff.contDiffOn`). For the
+  unstable side, `localUnstableSet f p U = localUnstableSet e p U`
+  (`Function.localUnstableSet_congr`, as `⇑e = f`) `= localStableSet e.symm p U`
+  (`Function.localStableSet_symm_eq_localUnstableSet`, as `U ⊆ e.source ∩ e.target`), the graph
+  of `hᵤ` over a neighborhood of `0` in the stable subspace of `fderiv ℝ e.symm p`;
+  `exists_graph_ofEq` makes it a graph over `Eᵤ` with values in `Eₛ`.
 -/
 
 @[expose] public section

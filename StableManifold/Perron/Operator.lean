@@ -35,31 +35,37 @@ with a bounded right-hand side `y` are exactly the sequences `z = stableOrbit ξ
   `θⁿ`, `θ = S.decayRate = (1 + λ) / 2`: if `‖y n‖ ≤ M θⁿ` then
   `‖perronOp y n‖ ≤ S.bound * M * θⁿ`.
 
-## Proofs (plan)
-
-Size: 350–500 lines.
+## Proofs
 
 * `summable_unstableInv_pow_apply`: `‖B^(j+1) (y (n + j))‖ ≤ C λ^(j+1) ‖y‖`
-  (`norm_unstableInv_pow_succ_le`), a geometric series (`Summable.of_norm_bounded`,
+  (`norm_unstableInv_pow_succ_le`), the terms of a geometric series (`Summable.of_norm_bounded`,
   `summable_geometric_of_lt_one`).
-* `norm_perronTerm_le`: `∑_{k < n} C λ^(n-1-k) ≤ C / (1 - λ)` (`Finset.sum_range_reflect`,
-  `Summable.sum_le_tsum`, `tsum_geometric_of_lt_one`) and `∑_j C λ^(j+1) ≤ C / (1 - λ)`
-  (`tsum_of_norm_bounded`); total `2 C / (1 - λ) ≤ S.bound`.
+* `norm_perronTerm_le`: the finite sum has norm `≤ ∑_{k < n} C λ^(n-1-k) ‖y‖ ≤ C ‖y‖ / (1 - λ)`
+  (`Finset.sum_range_reflect`, `Summable.sum_le_tsum`, `tsum_geometric_of_lt_one`), and the
+  series has norm `≤ C λ ‖y‖ / (1 - λ) ≤ C ‖y‖ / (1 - λ)` (`tsum_of_norm_bounded`); the total
+  `2 C ‖y‖ / (1 - λ)` is at most `S.bound ‖y‖ = 3 C ‖y‖ / (1 - λ)`.
 * `perronTerm_add`, `perronTerm_smul`: `Finset.sum_add_distrib`, `Summable.tsum_add`,
-  `Summable.tsum_const_smul`, with the summability above.
-* `norm_perronOp_le`: `LinearMap.mkContinuous_norm_le`.
-* `norm_perronOp_apply_le_of_le`: with `θ - λ = (1 - λ) / 2`,
-  `∑_{k<n} C λ^(n-1-k) M θ^k ≤ C M θⁿ / (θ - λ) = 2 C M θⁿ / (1 - λ)` and
-  `∑_j C λ^(j+1) M θ^(n+j) ≤ C M θⁿ λ / (1 - λ) ≤ C M θⁿ / (1 - λ)` (as `θ^j ≤ 1`).
-* `stableOrbit_add_perronOp_succ`: split into components. Stable part:
-  `P z (n+1) = A^(n+1) P ξ + ∑_{k ≤ n} A^(n-k) P y k = A (P z n) + P y n`
-  (`Finset.sum_range_succ`, `pow_mul_proj_comm`). Unstable part:
-  `A (∑_j B^(j+1) y (n+j)) = ∑_j (1 - P) B^j y (n+j) = (1 - P) y n + ∑_j B^(j+1) y (n+1+j)`
-  (`mul_unstableInv_pow_succ`, `one_sub_proj_mul_unstableInv`, `Summable.tsum_eq_zero_add`,
-  `ContinuousLinearMap.map_tsum`).
-* `eq_stableOrbit_add_perronOp`: the difference `d` of two bounded solutions with the same stable
-  component at `0` solves `d (n + 1) = A (d n)`, so `P d n = Aⁿ P d 0 = 0` and
-  `(1 - P) d n = Bᵐ (1 - P) d (n + m)`, of norm `≤ C λᵐ ‖d‖ → 0`; hence `d = 0`.
+  `Summable.tsum_const_smul`, with the summability above. `perronOp` is then
+  `LinearMap.mkContinuous` with the constant `S.bound`, so `norm_perronOp_le` is
+  `LinearMap.mkContinuous_norm_le`.
+* `norm_perronOp_apply_le_of_le`: with `θ - λ = (1 - λ) / 2`, `geom_sum₂_mul` gives
+  `∑_{k < n} θ^k λ^(n-1-k) ≤ θⁿ / (θ - λ) = 2 θⁿ / (1 - λ)`, so the finite sum has norm
+  `≤ 2 C M θⁿ / (1 - λ)`; the series has norm `≤ C M θⁿ / (1 - λ)`, as `‖y (n + j)‖ ≤ M θⁿ`.
+  The total is `3 C M θⁿ / (1 - λ) = S.bound M θⁿ`.
+* `proj_perronOp_apply_zero`: at time `0` only the series remains, and `P B^(j+1) = 0` term by
+  term (`ContinuousLinearMap.map_tsum`).
+* `stableOrbit_add_perronOp_succ`: the stable orbit gives `A^(n+1) P ξ = A (Aⁿ P ξ)`; the finite
+  sums, `∑_{k ≤ n} A^(n-k) P y k = A (∑_{k < n} A^(n-1-k) P y k) + P y n`
+  (`Finset.sum_range_succ`); the series,
+  `A (∑_j B^(j+1) y (n + j)) = (1 - P) y n + ∑_j B^(j+1) y (n + 1 + j)`, from
+  `A B^(j+1) = (1 - P) B^j` and `P B^(j+1) = 0` (`mul_unstableInv_pow_succ`,
+  `ContinuousLinearMap.map_tsum`, `Summable.tsum_eq_zero_add`). The three combine to the
+  equation.
+* `proj_stableOrbit_add_perronOp_zero`: `proj_perronOp_apply_zero` and `P² = P`.
+* `eq_stableOrbit_add_perronOp`: the difference `d` of `z` and `stableOrbit (z 0) + perronOp y`
+  solves `d (n + 1) = A (d n)` with `P (d 0) = 0`, so `P (d n) = 0` for all `n` (`A P = P A`),
+  `B (d (n + 1)) = d n` (`B A = 1 - P`), and `d n = Bᵐ (1 - P) (d (n + m))`, of norm
+  `≤ C λᵐ ‖d‖ → 0`; hence `d = 0`.
 -/
 
 @[expose] public section

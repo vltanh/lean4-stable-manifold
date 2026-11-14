@@ -33,50 +33,50 @@ subspace; such orbits tend to `0` geometrically (`norm_iterate_le`). If `φ` has
 `0`, the graph is tangent to the stable subspace: `graph` has derivative `0` at `0`
 (`hasFDerivAt_graph_zero`).
 
-## Proofs (plan)
+## Proofs
 
-Size: 450–700 lines.
-
-* `contractingWith_perronMap`: `superpose φ` is `L`-Lipschitz (`lipschitzWith_superpose`) and
-  `‖perronOp‖ ≤ S.bound` (`norm_perronOp_le`), so `perronMap ξ` is `L * S.bound ≤ 1/2`-Lipschitz
-  (`LipschitzWith.const`, `LipschitzWith.add`, `ContinuousLinearMap.lipschitzWith`,
-  `LipschitzWith.comp`, `LipschitzWith.weaken`).
-* `orbitSeq_succ`, `proj_orbitSeq_apply_zero`: rewrite the fixed point equation and use
-  `stableOrbit_add_perronOp_succ`, `proj_stableOrbit_add_perronOp_zero` with
-  `superpose_apply_of_lipschitzWith`.
-* `eq_orbitSeq_of_forall_succ`: `eq_stableOrbit_add_perronOp` makes `x` a fixed point of
-  `perronMap (x 0)`; `ContractingWith.fixedPoint_unique`.
-* `orbitSeq_proj`: `perronMap (P ξ) = perronMap ξ` (`stableOrbit_proj`). `orbitSeq_zero`: `0` is a
-  fixed point of `perronMap 0` (`superpose_zero`).
-* `dist_orbitSeq_le`: `ContractingWith.fixedPoint_lipschitz_in_map`, with
-  `dist (perronMap ξ x) (perronMap η x) = ‖stableOrbit (P ξ - P η)‖ ≤ C ‖P ξ - P η‖`
-  (`norm_pow_apply_proj_le`, `BoundedContinuousFunction.norm_le`).
+* `contractingWith_perronMap`: `superpose φ` is `L`-Lipschitz (`lipschitzWith_superpose`), so
+  `perronMap ξ` is `‖perronOp‖ L`-Lipschitz (`LipschitzWith.const`, `LipschitzWith.add`,
+  `ContinuousLinearMap.lipschitzWith`, `LipschitzWith.comp`), and
+  `‖perronOp‖ L ≤ S.bound L ≤ 1/2` (`norm_perronOp_le`, `LipschitzWith.weaken`).
+* `orbitSeq` is `ContractingWith.fixedPoint`. `orbitSeq_succ`, `proj_orbitSeq_apply_zero`: the
+  fixed point equation, with `stableOrbit_add_perronOp_succ`,
+  `proj_stableOrbit_add_perronOp_zero` and `superpose_apply_of_lipschitzWith`.
+* `eq_orbitSeq_of_forall_succ`: by `eq_stableOrbit_add_perronOp`, a bounded orbit `x` is a fixed
+  point of `perronMap (x 0)`, hence `orbitSeq (x 0)` (`ContractingWith.fixedPoint_unique`).
+  `orbitSeq_proj`: `perronMap (P ξ) = perronMap ξ` (`stableOrbit_proj`). `orbitSeq_zero`: `0` is
+  the fixed point of `perronMap 0` (`superpose_zero`).
+* `dist_orbitSeq_le`: `ContractingWith.fixedPoint_lipschitz_in_map` for two `1/2`-contractions
+  whose values differ by `stableOrbit ξ - stableOrbit η`, with terms `Aⁿ P (ξ - η)` of norm
+  `≤ C λⁿ ‖P ξ - P η‖ ≤ C ‖P ξ - P η‖` (`norm_pow_apply_proj_le`,
+  `BoundedContinuousFunction.dist_le`); so the fixed points are `2 C ‖P ξ - P η‖` apart.
 * `norm_orbitSeq_apply_le`: the set `K = {x | ∀ n, ‖x n‖ ≤ M θⁿ}`, `M = 2 C ‖P ξ‖`, is closed
-  (`isClosed_iInter`, `isClosed_le`, continuity of `BoundedContinuousFunction.evalCLM`), contains
-  `0`, and `perronMap ξ` maps it into itself: `‖Aⁿ P ξ‖ ≤ C θⁿ ‖P ξ‖`
-  (`norm_pow_apply_proj_le`, `λ ≤ θ`), `‖φ (x n)‖ ≤ L M θⁿ`, and
-  `norm_perronOp_apply_le_of_le` gives `S.bound * L * M θⁿ ≤ M θⁿ / 2`. The iterates of `0` stay
-  in `K` and tend to the fixed point (`ContractingWith.tendsto_iterate_fixedPoint`,
-  `IsClosed.mem_of_tendsto`).
+  (`isClosed_iInter`, `isClosed_le`, `BoundedContinuousFunction.lipschitz_eval_const`), and
+  `perronMap ξ` maps it into itself: `‖Aⁿ P ξ‖ ≤ C θⁿ ‖P ξ‖` (`norm_pow_apply_proj_le`, `λ ≤ θ`),
+  `‖φ (x n)‖ ≤ L M θⁿ` (`LipschitzWith.norm_le_mul`, `φ 0 = 0`), and
+  `norm_perronOp_apply_le_of_le` bounds the Lyapunov–Perron term by `S.bound L M θⁿ ≤ M θⁿ / 2`.
+  The iterates of `perronMap ξ` from `0` stay in `K` and tend to the fixed point
+  (`ContractingWith.tendsto_iterate_fixedPoint`, `IsClosed.mem_of_tendsto`).
 * `graph_proj`, `proj_graph`, `graph_zero`, `orbitSeq_apply_zero`: `orbitSeq_proj`,
-  `(1 - P) P = 0`, `P (1 - P) = 0`, `proj_orbitSeq_apply_zero`.
-* `lipschitzWith_graph`: `‖1 - P‖ ≤ C` (`norm_one_sub_proj_le`), `dist_orbitSeq_le`, `‖P‖ ≤ C`,
-  and `‖x 0‖ ≤ ‖x‖`.
+  `P (1 - P) = 0` (`proj_mul_one_sub_proj`), `orbitSeq_zero`, `proj_orbitSeq_apply_zero`.
+* `lipschitzWith_graph`: `‖1 - P‖ ≤ C`, `‖x 0‖ ≤ ‖x‖` (`dist_coe_le_dist`), `dist_orbitSeq_le` and
+  `‖P‖ ≤ C` (`norm_one_sub_proj_le`, `norm_proj_le`) give the constant `2 C³`.
 * `orbitSeq_apply_eq_iterate`: `orbitSeq x 0 = P x + graph x = x` (`orbitSeq_apply_zero`), then
-  induction with `orbitSeq_succ` (`Function.iterate_succ_apply'`).
-* `bddOrbit_iff`: if the orbit is bounded, it is a bounded sequence `z`
+  induction on `n` with `orbitSeq_succ` (`Function.iterate_succ_apply'`).
+* `bddOrbit_iff`: a bounded forward orbit is a bounded sequence `z`
   (`BoundedContinuousFunction.ofNormedAddCommGroupDiscrete`) with `z (n + 1) = F (z n)`, so
-  `z = orbitSeq x` (`eq_orbitSeq_of_forall_succ`) and
-  `(1 - P) x = (1 - P) (orbitSeq x 0) = graph x`; conversely `orbitSeq_apply_eq_iterate` and
-  `BoundedContinuousFunction.norm_coe_le_norm`.
-* `norm_iterate_le`, `tendsto_iterate`: `orbitSeq_apply_eq_iterate`, `norm_orbitSeq_apply_le`,
-  `tendsto_pow_atTop_nhds_zero_of_lt_one`, `squeeze_zero_norm`.
-* `hasFDerivAt_graph_zero`: `graph ξ = perronOp (φ ∘ orbitSeq ξ) 0` (the fixed point equation at
-  time `0` and `orbitSeq_apply_zero`), and `‖orbitSeq ξ‖ ≤ 2 C² ‖ξ‖` (`dist_orbitSeq_le` with
-  `η = 0`). Given `ε > 0`, `‖φ y‖ ≤ ε ‖y‖` for `‖y‖ < δ` (`HasFDerivAt` at `0` with `φ 0 = 0`);
-  for `‖ξ‖ < δ / (2 C²)`, `‖orbitSeq ξ j‖ < δ`, so `‖φ ∘ orbitSeq ξ‖ ≤ 2 C² ε ‖ξ‖` and
-  `‖graph ξ‖ ≤ S.bound * 2 C² ε ‖ξ‖` (`norm_perronOp_le`). So `graph ξ = o(ξ)`, which with
-  `graph 0 = 0` is `HasFDerivAt graph 0 0` (`hasFDerivAt_iff_isLittleO_nhds_zero`).
+  `z = orbitSeq x` (`eq_orbitSeq_of_forall_succ`) and `(1 - P) x = graph x` by definition of
+  `graph`; conversely the orbit is `orbitSeq x` (`orbitSeq_apply_eq_iterate`), bounded by its
+  norm (`BoundedContinuousFunction.norm_coe_le_norm`).
+* `norm_iterate_le`, `tendsto_iterate`: `orbitSeq_apply_eq_iterate` and `norm_orbitSeq_apply_le`,
+  then `tendsto_pow_atTop_nhds_zero_of_lt_one` and `squeeze_zero_norm`.
+* `hasFDerivAt_graph_zero`: the fixed point equation at time `0` and `orbitSeq_apply_zero` give
+  `graph ξ = perronOp (φ ∘ orbitSeq ξ) 0`, and `dist_orbitSeq_le` with `η = 0` gives
+  `‖orbitSeq ξ‖ ≤ 2 C² ‖ξ‖`. Given `c > 0`, let `c' = c / (2 C² S.bound)`: `‖φ y‖ ≤ c' ‖y‖` for
+  `‖y‖ < δ` (`HasFDerivAt` at `0`, `φ 0 = 0`). For `‖ξ‖ < δ / (2 C²)` every term of
+  `orbitSeq ξ` has norm `< δ`, so `‖φ ∘ orbitSeq ξ‖ ≤ 2 C² c' ‖ξ‖` and
+  `‖graph ξ‖ ≤ S.bound · 2 C² c' ‖ξ‖ = c ‖ξ‖` (`norm_perronOp_le`): this is
+  `HasFDerivAt graph 0 0` (`hasFDerivAt_iff_isLittleO_nhds_zero`, `IsLittleO.of_bound`).
 -/
 
 @[expose] public section
