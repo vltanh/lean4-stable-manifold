@@ -77,7 +77,31 @@ theorem exists_openPartialHomeomorph_contDiffOn_symm {f : E → E} {p : E} {W : 
     (hA : fderiv ℝ f p = A) :
     ∃ e : OpenPartialHomeomorph E E, (e : E → E) = f ∧ p ∈ e.source ∧
       ContDiffOn ℝ n e.symm e.target ∧ HasFDerivAt e.symm (A.symm : E →L[ℝ] E) (f p) := by
-  sorry
+  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by
+    have : (0 : ℕ∞) < n := zero_lt_one.trans_le hn
+    exact_mod_cast this.ne'
+  have hn1 : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
+  have hfa (x : E) (hx : x ∈ interior W) : ContDiffAt ℝ n f x :=
+    hf.contDiffAt (mem_interior_iff_mem_nhds.1 hx)
+  have hfd (x : E) (hx : x ∈ interior W) : HasFDerivAt f (fderiv ℝ f x) x :=
+    ((hfa x hx).differentiableAt hn0).hasFDerivAt
+  have hpW : p ∈ interior W := mem_interior_iff_mem_nhds.2 hW
+  have hfp : HasFDerivAt f (A : E →L[ℝ] E) p := hA ▸ hfd p hpW
+  -- the inverse function theorem, then restriction to the points with invertible derivative
+  let e₀ := (hfa p hpW).toOpenPartialHomeomorph f hfp hn0
+  have hT : IsOpen (interior W ∩ fderiv ℝ f ⁻¹' {T | T.IsInvertible}) :=
+    ((hf.mono interior_subset).continuousOn_fderiv_of_isOpen isOpen_interior
+      hn1).isOpen_inter_preimage isOpen_interior
+      ContinuousLinearMap.isOpen_setOfPred_isInvertible
+  let e := e₀.restrOpen _ hT
+  have hpe : p ∈ e.source :=
+    ⟨(hfa p hpW).mem_toOpenPartialHomeomorph_source hfp hn0, hpW, A, hA.symm⟩
+  refine ⟨e, rfl, hpe, fun y hy ↦ ?_, ?_⟩
+  · obtain ⟨-, hxW, M, hM⟩ := e.map_target hy
+    refine (e.contDiffAt_symm hy (f₀' := M) ?_ (hfa _ hxW)).contDiffWithinAt
+    rw [hM]
+    exact hfd _ hxW
+  · exact ((hfa p hpW).hasStrictFDerivAt' hfp hn0).to_localInverse.hasFDerivAt
 
 omit [FiniteDimensional ℝ E] in
 /-- A graph over a subspace is a graph over any equal subspace (to move between the subspaces of
@@ -118,6 +142,40 @@ theorem exists_localStableSet_localUnstableSet_eq_graph {f : E → E} {p : E} {W
         ∃ hu : (fderiv ℝ f p).unstableSubspace → (fderiv ℝ f p).stableSubspace,
           ContDiffOn ℝ n hu Vu ∧ hu 0 = 0 ∧ fderiv ℝ hu 0 = 0 ∧
           localUnstableSet f p U = (fun y ↦ p + ↑y + ↑(hu y)) '' Vu) := by
-  sorry
+  obtain ⟨A, hA⟩ := hinv
+  obtain ⟨e, he, hpe, hes, hed⟩ := exists_openPartialHomeomorph_contDiffOn_symm hn hW hf hA.symm
+  -- the local inverse `e⁻¹` fixes `p`, with derivative `A⁻¹` there
+  have hep : e p = p := by rw [he, hfix]
+  have hpt : p ∈ e.target := hep ▸ e.map_source hpe
+  have hgp : e.symm p = p := by simpa [hep] using e.left_inv hpe
+  have hgd : fderiv ℝ e.symm p = (A.symm : E →L[ℝ] E) := by
+    rw [hfix] at hed
+    exact hed.fderiv
+  have hst : (fderiv ℝ e.symm p).stableSubspace = (fderiv ℝ f p).unstableSubspace := by
+    rw [hgd, ContinuousLinearMap.stableSubspace_symm, hA]
+  have hun : (fderiv ℝ e.symm p).unstableSubspace = (fderiv ℝ f p).stableSubspace := by
+    rw [hgd, ContinuousLinearMap.unstableSubspace_symm, hA]
+  have hsplit := ContinuousLinearMap.isCompl_stableSubspace_unstableSubspace hyp
+  -- the local stable manifold theorem for `f` and for `e⁻¹`
+  obtain ⟨δ₁, hδ₁, hs, hsC, hs0, hsd, hsU⟩ :=
+    exists_localStableSet_eq_graph_of_isCompl hn hW hf hfix hsplit
+  obtain ⟨δ₂, hδ₂, hu, huC, hu0, hud, huU⟩ :=
+    exists_localStableSet_eq_graph_of_isCompl hn (e.open_target.mem_nhds hpt) hes hgp
+      (by rw [hst, hun]; exact hsplit.symm)
+  -- one neighborhood for both
+  set U := ball p (min δ₁ δ₂) ∩ e.source ∩ e.target
+  have hUo : IsOpen U := (isOpen_ball.inter e.open_source).inter e.open_target
+  have hUn : U ∈ 𝓝 p := hUo.mem_nhds ⟨⟨mem_ball_self (lt_min hδ₁ hδ₂), hpe⟩, hpt⟩
+  refine ⟨U, hUn, hUo, ?_, ?_⟩
+  · obtain ⟨Vs, hVs, heq⟩ :=
+      hsU U hUn fun x hx ↦ ball_subset_ball (min_le_left _ _) hx.1.1
+    exact ⟨Vs, hVs, hs, hsC.contDiffOn, hs0, hsd, heq⟩
+  · obtain ⟨Vu, hVu, heq⟩ :=
+      huU U hUn fun x hx ↦ ball_subset_ball (min_le_right _ _) hx.1.1
+    have hloc : localUnstableSet f p U = localStableSet e.symm p U := by
+      rw [localUnstableSet_congr (g := e) fun x _ ↦ by rw [he]]
+      exact (localStableSet_symm_eq_localUnstableSet e fun x (hx : x ∈ U) ↦ ⟨hx.1.2, hx.2⟩).1.symm
+    rw [hloc]
+    exact exists_graph_ofEq hst hun hVu huC.contDiffOn hu0 hud heq
 
 end Function

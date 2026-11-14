@@ -100,7 +100,12 @@ Proof: `fⁿ(x) ∈ U` for `n ≥ N`; then `f^[k] (f^[n] x) = f^[k + n] x ∈ U`
 theorem eventually_iterate_mem_localStableSet {f : X → X} {p : X} {U : Set X} (hU : U ∈ 𝓝 p)
     {x : X} (hx : Tendsto (fun n : ℕ ↦ f^[n] x) atTop (𝓝 p)) :
     ∀ᶠ n in atTop, f^[n] x ∈ localStableSet f p U := by
-  sorry
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hx hU)
+  refine eventually_atTop.2 ⟨N, fun n hn ↦ ⟨fun k ↦ ?_, ?_⟩⟩
+  · rw [← iterate_add_apply]
+    exact hN _ (by omega)
+  · simp_rw [← iterate_add_apply]
+    exact (tendsto_add_atTop_iff_nat n).2 hx
 
 /-- **A backward orbit tending to `p` eventually lies in the local unstable set** of any
 neighborhood `U` of `p`: if `f (y (n + 1)) = y n` for all `n` and `y n → p`, then `y n` lies in
@@ -108,7 +113,32 @@ neighborhood `U` of `p`: if `f (y (n + 1)) = y n` for all `n` and `y n → p`, t
 theorem eventually_mem_localUnstableSet {f : X → X} {p : X} {U : Set X} (hU : U ∈ 𝓝 p)
     {y : ℕ → X} (hy : ∀ n, f (y (n + 1)) = y n) (ht : Tendsto y atTop (𝓝 p)) :
     ∀ᶠ n in atTop, y n ∈ localUnstableSet f p U := by
-  sorry
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (ht hU)
+  refine eventually_atTop.2 ⟨N, fun n hn ↦ ⟨fun k ↦ y (k + n), by simp,
+    fun k ↦ ⟨hN _ (by omega), ?_⟩, (tendsto_add_atTop_iff_nat n).2 ht⟩⟩
+  change f (y (k + 1 + n)) = y (k + n)
+  rw [Nat.add_right_comm]
+  exact hy _
+
+/-- One half of `localStableSet_symm_eq_localUnstableSet`. -/
+private lemma localStableSet_symm_eq_localUnstableSet_aux (e : OpenPartialHomeomorph X X) {p : X}
+    {U : Set X} (hU : U ⊆ e.source ∩ e.target) :
+    localStableSet e.symm p U = localUnstableSet e p U := by
+  ext x
+  constructor
+  · rintro ⟨hxU, hxt⟩
+    refine ⟨fun n ↦ e.symm^[n] x, rfl, fun n ↦ ⟨hxU n, ?_⟩, hxt⟩
+    change e (e.symm^[n + 1] x) = e.symm^[n] x
+    rw [iterate_succ_apply']
+    exact e.right_inv (hU (hxU n)).2
+  · rintro ⟨y, rfl, hy, hyt⟩
+    have hit : ∀ n, e.symm^[n] (y 0) = y n := by
+      intro n
+      induction n with
+      | zero => rfl
+      | succ n ih =>
+        rw [iterate_succ_apply', ih, ← (hy n).2, e.left_inv (hU (hy (n + 1)).1).1]
+    exact ⟨fun n ↦ (hit n).symm ▸ (hy n).1, hyt.congr fun n ↦ (hit n).symm⟩
 
 /-- **Unstable for `f` means stable for `f⁻¹`**: for an open partial homeomorphism `e` and a set
 `U` inside both its source and its target, the local stable set of `e⁻¹|_U` is the local unstable
@@ -122,7 +152,18 @@ theorem localStableSet_symm_eq_localUnstableSet (e : OpenPartialHomeomorph X X) 
     {U : Set X} (hU : U ⊆ e.source ∩ e.target) :
     localStableSet e.symm p U = localUnstableSet e p U ∧
       localUnstableSet e.symm p U = localStableSet e p U := by
-  sorry
+  refine ⟨localStableSet_symm_eq_localUnstableSet_aux e hU, ?_⟩
+  have h := localStableSet_symm_eq_localUnstableSet_aux e.symm (p := p)
+    (hU.trans (inter_comm _ _).subset)
+  rwa [OpenPartialHomeomorph.symm_symm, eq_comm] at h
+
+omit [TopologicalSpace X] in
+/-- Along an `f`-orbit in `U`, the iterates of `f` and of any `g` equal to `f` on `U` agree. -/
+private lemma iterate_eq_of_eqOn {f g : X → X} {U : Set X} (h : EqOn f g U) {x : X}
+    (hx : ∀ n, f^[n] x ∈ U) (n : ℕ) : f^[n] x = g^[n] x := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [iterate_succ_apply', iterate_succ_apply', ← ih, h (hx n)]
 
 /-- The local stable set of `f|_U` depends only on the values of `f` on `U`.
 
@@ -130,14 +171,22 @@ Proof: if the `f`-orbit of `x` stays in `U`, then `f^[n] x = g^[n] x` by inducti
 `g`-orbit is the same; symmetrically. -/
 theorem localStableSet_congr {f g : X → X} {p : X} {U : Set X} (h : EqOn f g U) :
     localStableSet f p U = localStableSet g p U := by
-  sorry
+  have key {f g : X → X} (h : EqOn f g U) : localStableSet f p U ⊆ localStableSet g p U := by
+    rintro x ⟨hxU, hxt⟩
+    have hfg : ∀ n, f^[n] x = g^[n] x := iterate_eq_of_eqOn h hxU
+    exact ⟨fun n ↦ hfg n ▸ hxU n, hxt.congr hfg⟩
+  exact (key h).antisymm (key h.symm)
 
 /-- The local unstable set of `f|_U` depends only on the values of `f` on `U`.
 
 Proof: a backward orbit `y` in `U` has `f (y (n + 1)) = g (y (n + 1))` since `y (n + 1) ∈ U`. -/
 theorem localUnstableSet_congr {f g : X → X} {p : X} {U : Set X} (h : EqOn f g U) :
     localUnstableSet f p U = localUnstableSet g p U := by
-  sorry
+  have key {f g : X → X} (h : EqOn f g U) :
+      localUnstableSet f p U ⊆ localUnstableSet g p U := by
+    rintro x ⟨y, hy0, hy, hyt⟩
+    exact ⟨y, hy0, fun n ↦ ⟨(hy n).1, by rw [← h (hy (n + 1)).1, (hy n).2]⟩, hyt⟩
+  exact (key h).antisymm (key h.symm)
 
 /-- **Conjugation** carries local stable sets along: for a homeomorphism `e : X ≃ₜ Y`, the local
 stable set of `e ∘ f ∘ e⁻¹` at `e p` in `e '' U` is the image by `e` of the local stable set of `f`
@@ -148,7 +197,16 @@ and `e`, `e.symm` are continuous, so they carry convergent orbits to convergent 
 theorem localStableSet_conj {Y : Type*} [TopologicalSpace Y] (e : X ≃ₜ Y) (f : X → X) (p : X)
     (U : Set X) :
     localStableSet (e ∘ f ∘ e.symm) (e p) (e '' U) = e '' localStableSet f p U := by
-  sorry
+  have hit (n : ℕ) (x : X) : (e ∘ f ∘ e.symm)^[n] (e x) = e (f^[n] x) := by
+    have hs : Semiconj e f (e ∘ f ∘ e.symm) := fun x ↦ by simp
+    exact ((hs.iterate_right n) x).symm
+  ext z
+  obtain ⟨x, rfl⟩ := e.surjective z
+  rw [e.injective.mem_set_image]
+  simp only [localStableSet, mem_ofPred_eq, hit, e.injective.mem_set_image]
+  refine and_congr Iff.rfl ⟨fun ht ↦ ?_, fun ht ↦ (e.continuous.tendsto p).comp ht⟩
+  have := (e.symm.continuous.tendsto (e p)).comp ht
+  simpa [Function.comp_def] using this
 
 /-- **Conjugation** carries local unstable sets along: for a homeomorphism `e : X ≃ₜ Y`, the local
 unstable set of `e ∘ f ∘ e⁻¹` at `e p` in `e '' U` is the image by `e` of the local unstable set of
@@ -160,6 +218,20 @@ continuity of `e` and `e.symm` carries the limits. -/
 theorem localUnstableSet_conj {Y : Type*} [TopologicalSpace Y] (e : X ≃ₜ Y) (f : X → X) (p : X)
     (U : Set X) :
     localUnstableSet (e ∘ f ∘ e.symm) (e p) (e '' U) = e '' localUnstableSet f p U := by
-  sorry
+  ext z
+  obtain ⟨x, rfl⟩ := e.surjective z
+  rw [e.injective.mem_set_image]
+  constructor
+  · rintro ⟨w, hw0, hw, hwt⟩
+    refine ⟨fun n ↦ e.symm (w n), by simp [hw0], fun n ↦ ⟨?_, ?_⟩, ?_⟩
+    · obtain ⟨u, hu, hwu⟩ := (hw n).1
+      simpa [← hwu] using hu
+    · have h := congrArg e.symm (hw n).2
+      simpa using h
+    · simpa [Function.comp_def] using (e.symm.continuous.tendsto (e p)).comp hwt
+  · rintro ⟨y, hy0, hy, hyt⟩
+    refine ⟨fun n ↦ e (y n), by simp [hy0], fun n ↦ ⟨mem_image_of_mem e (hy n).1, ?_⟩,
+      (e.continuous.tendsto p).comp hyt⟩
+    simp [(hy n).2]
 
 end Function
