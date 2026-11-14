@@ -74,21 +74,33 @@ theorem superpose_apply_of_bound {φ : E → G} {x : ℕ →ᵇ E} (h : ∃ C, �
 /-- For a Lipschitz `φ`, `superpose φ x n = φ (x n)` for every bounded sequence `x`. -/
 theorem superpose_apply_of_lipschitzWith {φ : E → G} {K : ℝ≥0} (hφ : LipschitzWith K φ)
     (x : ℕ →ᵇ E) (n : ℕ) : superpose φ x n = φ (x n) := by
-  sorry
+  refine superpose_apply_of_bound ⟨‖φ 0‖ + K * ‖x‖, fun m ↦ ?_⟩ n
+  calc ‖φ (x m)‖ ≤ ‖φ 0‖ + ‖φ (x m) - φ 0‖ := norm_le_insert' _ _
+    _ ≤ ‖φ 0‖ + K * ‖x m‖ := by
+        gcongr
+        simpa [dist_eq_norm] using hφ.dist_le_mul (x m) 0
+    _ ≤ ‖φ 0‖ + K * ‖x‖ := by gcongr; exact x.norm_coe_le_norm m
 
 /-- For a continuous `φ` on a proper space, `superpose φ x n = φ (x n)` for every bounded sequence
 `x`. -/
 theorem superpose_apply [ProperSpace E] {φ : E → G} (hφ : Continuous φ) (x : ℕ →ᵇ E) (n : ℕ) :
     superpose φ x n = φ (x n) := by
-  sorry
+  obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : E) ‖x‖).exists_bound_of_continuousOn
+    hφ.continuousOn
+  exact superpose_apply_of_bound
+    ⟨C, fun m ↦ hC _ (mem_closedBall_zero_iff.2 (x.norm_coe_le_norm m))⟩ n
 
 theorem superpose_zero {φ : E → G} (hφ : φ 0 = 0) : superpose φ 0 = 0 := by
-  sorry
+  ext n
+  rw [superpose_apply_of_bound ⟨0, fun _ ↦ by simp [hφ]⟩]
+  simp [hφ]
 
 /-- A `K`-Lipschitz `φ` gives a `K`-Lipschitz superposition operator. -/
 theorem lipschitzWith_superpose {φ : E → G} {K : ℝ≥0} (hφ : LipschitzWith K φ) :
     LipschitzWith K (superpose φ) := by
-  sorry
+  refine LipschitzWith.of_dist_le_mul fun x y ↦ (dist_le (by positivity)).2 fun n ↦ ?_
+  rw [superpose_apply_of_lipschitzWith hφ, superpose_apply_of_lipschitzWith hφ]
+  exact (hφ.dist_le_mul _ _).trans (by gcongr; exact dist_coe_le_dist n)
 
 /-- A continuous `φ` on a proper space gives a continuous superposition operator.
 
@@ -96,7 +108,22 @@ Proof: `φ` is uniformly continuous on the compact ball `closedBall 0 (‖x‖ +
 the values of all sequences `1`-close to `x`. -/
 theorem continuous_superpose [ProperSpace E] {φ : E → G} (hφ : Continuous φ) :
     Continuous (superpose φ) := by
-  sorry
+  refine Metric.continuous_iff.2 fun x ε hε ↦ ?_
+  obtain ⟨δ, hδ, hφδ⟩ := Metric.uniformContinuousOn_iff.1
+    ((isCompact_closedBall (0 : E) (‖x‖ + 1)).uniformContinuousOn_of_continuous hφ.continuousOn)
+    (ε / 2) (half_pos hε)
+  refine ⟨min δ 1, lt_min hδ one_pos, fun y hy ↦ ?_⟩
+  refine lt_of_le_of_lt ((dist_le (half_pos hε).le).2 fun n ↦ ?_) (half_lt_self hε)
+  rw [superpose_apply hφ, superpose_apply hφ]
+  have hyx : dist (y n) (x n) < min δ 1 := (dist_coe_le_dist n).trans_lt hy
+  have hx : x n ∈ closedBall (0 : E) (‖x‖ + 1) :=
+    mem_closedBall_zero_iff.2 ((x.norm_coe_le_norm n).trans (le_add_of_nonneg_right zero_le_one))
+  have hy' : y n ∈ closedBall (0 : E) (‖x‖ + 1) := by
+    rw [mem_closedBall_zero_iff]
+    calc ‖y n‖ ≤ ‖x n‖ + dist (y n) (x n) := by
+          rw [dist_eq_norm]; exact norm_le_insert' _ _
+      _ ≤ ‖x‖ + 1 := add_le_add (x.norm_coe_le_norm n) (hyx.le.trans (min_le_right _ _))
+  exact (hφδ _ hy' _ hx (hyx.trans_le (min_le_left _ _))).le
 
 end Superpose
 
@@ -128,8 +155,9 @@ theorem applySeq_apply (a : ℕ →ᵇ (E →L[ℝ] G)) (y : ℕ →ᵇ E) (n : 
     applySeq a y n = a n (y n) :=
   rfl
 
-theorem norm_applySeq_le (a : ℕ →ᵇ (E →L[ℝ] G)) : ‖applySeq a‖ ≤ ‖a‖ := by
-  sorry
+theorem norm_applySeq_le (a : ℕ →ᵇ (E →L[ℝ] G)) : ‖applySeq a‖ ≤ ‖a‖ :=
+  (applySeq a).opNorm_le_bound (norm_nonneg a) fun y ↦
+    (norm_le (by positivity)).2 fun n ↦ by rw [applySeq_apply]; exact norm_apply_apply_le a y n
 
 end ApplySeq
 

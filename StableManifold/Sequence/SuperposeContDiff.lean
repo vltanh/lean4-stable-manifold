@@ -8,7 +8,7 @@ module
 public import StableManifold.Sequence.Superpose
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.MeanValue
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Smoothness of the superposition operator
@@ -38,8 +38,8 @@ Size: 300–500 lines.
   hence uniformly continuous on the compact ball `closedBall 0 (R + 1)`
   (`IsCompact.uniformContinuousOn_of_continuous`): take `δ ≤ 1` with
   `‖Dφ z - Dφ a‖ ≤ ε` when `‖z - a‖ < δ` in that ball. Apply the mean value inequality
-  (`Convex.norm_image_sub_le_of_norm_fderiv_le`, on the segment `[a, a + b]`) to
-  `z ↦ φ z - Dφ(a) z`, whose derivative is `Dφ z - Dφ a`.
+  (`Convex.norm_image_sub_le_of_norm_fderiv_le'`, on the ball `ball a δ`) to `φ` and the linear
+  map `Dφ(a)`, that is, to `z ↦ φ z - Dφ(a) z`, whose derivative is `Dφ z - Dφ a`.
 * `hasFDerivAt_superpose`: with `R = ‖x‖`, the previous lemma gives, for `‖y‖ < δ`,
   `‖superpose φ (x + y) - superpose φ x - applySeq (superpose (fderiv ℝ φ) x) y‖ ≤ ε ‖y‖`
   (evaluate at each `n` with `superpose_apply`, `applySeq_apply`, then
@@ -75,7 +75,23 @@ theorem exists_norm_sub_sub_fderiv_le {φ : E → G} (hφ : ContDiff ℝ 1 φ) (
     (hε : 0 < ε) :
     ∃ δ > 0, ∀ a b : E, ‖a‖ ≤ R → ‖b‖ < δ →
       ‖φ (a + b) - φ a - fderiv ℝ φ a b‖ ≤ ε * ‖b‖ := by
-  sorry
+  obtain ⟨δ, hδ, hφδ⟩ := Metric.uniformContinuousOn_iff.1
+    ((isCompact_closedBall (0 : E) (R + 1)).uniformContinuousOn_of_continuous
+      (hφ.continuous_fderiv one_ne_zero).continuousOn) ε hε
+  have hδ₁ : 0 < min δ 1 := lt_min hδ one_pos
+  refine ⟨min δ 1, hδ₁, fun a b ha hb ↦ ?_⟩
+  have hsub : ball a (min δ 1) ⊆ closedBall 0 (R + 1) := fun z hz ↦ by
+    rw [mem_ball, dist_eq_norm] at hz
+    rw [mem_closedBall_zero_iff]
+    calc ‖z‖ ≤ ‖a‖ + ‖z - a‖ := norm_le_insert' _ _
+      _ ≤ R + 1 := add_le_add ha (hz.le.trans (min_le_right _ _))
+  have ha' : a ∈ closedBall (0 : E) (R + 1) := hsub (mem_ball_self hδ₁)
+  have hab : a + b ∈ ball a (min δ 1) := by simpa [mem_ball, dist_eq_norm] using hb
+  have bound : ∀ z ∈ ball a (min δ 1), ‖fderiv ℝ φ z - fderiv ℝ φ a‖ ≤ ε := fun z hz ↦ by
+    rw [← dist_eq_norm]
+    exact (hφδ z (hsub hz) a ha' ((mem_ball.1 hz).trans_le (min_le_left _ _))).le
+  simpa using (convex_ball a (min δ 1)).norm_image_sub_le_of_norm_fderiv_le'
+    (fun z _ ↦ hφ.differentiable one_ne_zero z) bound (mem_ball_self hδ₁) hab
 
 /-- **The derivative of the superposition operator**: for a `C¹` map `φ`, the superposition
 operator has at `x` the derivative `y ↦ (n ↦ Dφ(x n) (y n))`.
@@ -83,7 +99,16 @@ operator has at `x` the derivative `y ↦ (n ↦ Dφ(x n) (y n))`.
 Proof: `exists_norm_sub_sub_fderiv_le` with `R = ‖x‖`, evaluated at each `n`. -/
 theorem hasFDerivAt_superpose {φ : E → G} (hφ : ContDiff ℝ 1 φ) (x : ℕ →ᵇ E) :
     HasFDerivAt (superpose φ) (applySeq (superpose (fderiv ℝ φ) x)) x := by
-  sorry
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff]
+  intro c hc
+  obtain ⟨δ, hδ, hTaylor⟩ := exists_norm_sub_sub_fderiv_le hφ ‖x‖ hc
+  filter_upwards [ball_mem_nhds (0 : ℕ →ᵇ E) hδ] with y hy
+  rw [mem_ball_zero_iff] at hy
+  refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun n ↦ ?_
+  simp only [FunLike.coe_sub, FunLike.coe_add, Pi.sub_apply, Pi.add_apply, applySeq_apply,
+    superpose_apply hφ.continuous, superpose_apply (hφ.continuous_fderiv one_ne_zero)]
+  exact (hTaylor (x n) (y n) (x.norm_coe_le_norm n) ((y.norm_coe_le_norm n).trans_lt hy)).trans
+    (by gcongr; exact y.norm_coe_le_norm n)
 
 theorem fderiv_superpose {φ : E → G} (hφ : ContDiff ℝ 1 φ) :
     fderiv ℝ (superpose φ) = fun x ↦ applySeq (superpose (fderiv ℝ φ) x) :=
@@ -95,6 +120,23 @@ Proof: induction on `n`, through `fderiv ℝ (superpose φ) = applySeq ∘ super
 and the induction hypothesis for `fderiv ℝ φ`; `contDiff_infty` for `n = ∞`. -/
 theorem contDiff_superpose {φ : E → G} {n : ℕ∞} (hφ : ContDiff ℝ n φ) :
     ContDiff ℝ n (superpose φ) := by
-  sorry
+  suffices h : ∀ (m : ℕ) {G : Type u} [NormedAddCommGroup G] [NormedSpace ℝ G] {φ : E → G},
+      ContDiff ℝ m φ → ContDiff ℝ m (superpose φ) by
+    induction n using ENat.recTopCoe with
+    | top => exact contDiff_infty.2 fun m ↦ h m (hφ.of_le (by exact_mod_cast le_top))
+    | coe m => exact_mod_cast h m (by exact_mod_cast hφ)
+  intro m
+  induction m with
+  | zero =>
+    intro G _ _ φ hφ
+    exact contDiff_zero.2 (continuous_superpose (contDiff_zero.1 hφ))
+  | succ m ih =>
+    intro G _ _ φ hφ
+    have h1 : ContDiff ℝ 1 φ := hφ.of_le (by exact_mod_cast Nat.le_add_left 1 m)
+    rw [Nat.cast_succ] at hφ ⊢
+    refine contDiff_succ_iff_fderiv.2 ⟨fun x ↦ (hasFDerivAt_superpose h1 x).differentiableAt,
+      by simp, ?_⟩
+    rw [fderiv_superpose h1]
+    exact applySeq.contDiff.comp (ih (contDiff_succ_iff_fderiv.1 hφ).2.2)
 
 end StableManifold
