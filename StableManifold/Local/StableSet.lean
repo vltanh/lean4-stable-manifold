@@ -21,6 +21,9 @@ complementary (for instance, `A` hyperbolic). Then there are `δ > 0` and a `C�
 inside the ball of radius `δ`, the local stable set of `f|_U` is the graph
 `{p + x + hₛ x | x ∈ Vₛ}` over some neighborhood `Vₛ` of `0` in `Eₛ`
 (`Function.exists_localStableSet_eq_graph_of_isCompl`). The map `hₛ` does not depend on `U`.
+Inside a small ball, a forward orbit that stays in `U` tends to `p`, so the local stable set of
+`f|_U` is the set of points whose forward orbit stays in `U`
+(`Function.exists_localStableSet_eq_setOf_forall_iterate_mem`).
 
 Ingredients:
 
@@ -59,6 +62,10 @@ Ingredients:
   `hₛ = stableGraph`. For `U ⊆ ball p δ`: `localStableSet_eq_image_add`,
   `Function.localStableSet_congr` on `(p + ·) ⁻¹' U ⊆ ball 0 δ`,
   `exists_localStableSet_map_eq_image`, and `Set.image_image`.
+* `Function.exists_localStableSet_eq_setOf_forall_iterate_mem`: the same cut-off `F`. If the
+  `f`-orbit of `x` stays in `U ⊆ ball p δ`, then `F^[k] (x - p) = f^[k] x - p` by induction, as
+  `F = g` on `ball 0 δ`; this orbit is bounded, so it lies on the graph
+  (`Perturbation.bddOrbit_iff`) and tends to `0` (`Perturbation.tendsto_iterate`).
 -/
 
 @[expose] public section
@@ -204,6 +211,48 @@ namespace Function
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
+/-- **The cut-off at a fixed point**: if the stable and unstable subspaces of `Df(p)` are
+complementary, the translate `x ↦ f (p + x) - p` agrees on a ball around `0` with a perturbation
+`F = Df(p) + φ` of a hyperbolic splitting of `Df(p)`, with `φ` of class `Cⁿ` and `Dφ(0) = 0`. -/
+private lemma exists_perturbation_eqOn_ball {f : E → E} {p : E} {W : Set E} {n : ℕ∞}
+    (hn : 1 ≤ n) (hW : W ∈ 𝓝 p) (hf : ContDiffOn ℝ n f W) (hfix : f p = p)
+    (hsplit : IsCompl (fderiv ℝ f p).stableSubspace (fderiv ℝ f p).unstableSubspace) :
+    ∃ S : (fderiv ℝ f p).HyperbolicSplitting, ∃ F : StableManifold.Perturbation S, ∃ δ > 0,
+      ContDiff ℝ n F.φ ∧ HasFDerivAt F.φ (0 : E →L[ℝ] E) 0 ∧
+      EqOn (fun x ↦ f (p + x) - p) F.map (ball 0 δ) := by
+  obtain ⟨S⟩ := ContinuousLinearMap.nonempty_hyperbolicSplitting hsplit
+  -- the translated map `g x = f (p + x) - p`, `Cⁿ` near `0`, with derivative `Df(p)` at `0`
+  have hcont : Continuous (fun x : E ↦ p + x) := continuous_const.add continuous_id
+  have hpre : (p + ·) ⁻¹' W ∈ 𝓝 (0 : E) :=
+    hcont.continuousAt.preimage_mem_nhds (by simpa using hW)
+  have hg : ContDiffOn ℝ n (fun x ↦ f (p + x) - p) ((p + ·) ⁻¹' W) :=
+    (hf.comp (contDiff_const.add contDiff_id).contDiffOn fun _ hx ↦ hx).sub contDiffOn_const
+  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by
+    have : (0 : ℕ∞) < n := zero_lt_one.trans_le hn
+    exact_mod_cast this.ne'
+  have hgA : HasFDerivAt (fun x ↦ f (p + x) - p) (fderiv ℝ f p) 0 := by
+    have h1 : HasFDerivAt (fun x : E ↦ p + x) (ContinuousLinearMap.id ℝ E) 0 :=
+      (hasFDerivAt_id 0).const_add p
+    have h2 : HasFDerivAt f (fderiv ℝ f p) (p + 0) := by
+      rw [add_zero]
+      exact ((hf.contDiffAt hW).differentiableAt hn0).hasFDerivAt
+    simpa using (h2.comp 0 h1).sub_const p
+  -- the cut-off, with Lipschitz constant `1 / (2 S.bound)`
+  have hb := S.bound_pos
+  have hη : 0 < (1 / (2 * S.bound)).toNNReal := by simpa using hb
+  obtain ⟨δ, hδ, φ, hφ, hlip, hφ0, hdφ, hEq⟩ :=
+    StableManifold.exists_contDiff_lipschitzWith_eqOn_ball hn hpre hg (by simp [hfix]) hgA hη
+  let F : StableManifold.Perturbation S :=
+    { φ := φ
+      lip := (1 / (2 * S.bound)).toNNReal
+      lipschitzWith := hlip
+      map_zero := hφ0
+      lip_mul_bound_le := by
+        rw [Real.coe_toNNReal _ (by positivity)]
+        field_simp
+        rfl }
+  exact ⟨S, F, δ, hδ, hφ, hdφ, hEq⟩
+
 /-- **The local stable manifold theorem**, for every small neighborhood. Let `f` be `Cⁿ`
 (`1 ≤ n ≤ ∞`) on a neighborhood `W` of a fixed point `p`, and suppose that the stable and unstable
 subspaces of `A = Df(p)` are complementary. Then there are `δ > 0` and a `Cⁿ` map
@@ -222,48 +271,55 @@ theorem exists_localStableSet_eq_graph_of_isCompl {f : E → E} {p : E} {W : Set
       ∀ U ∈ 𝓝 p, U ⊆ ball p δ →
         ∃ Vs ∈ 𝓝 (0 : (fderiv ℝ f p).stableSubspace),
           localStableSet f p U = (fun x ↦ p + ↑x + ↑(hs x)) '' Vs := by
-  obtain ⟨S⟩ := ContinuousLinearMap.nonempty_hyperbolicSplitting hsplit
-  -- the translated map `g x = f (p + x) - p`, `Cⁿ` near `0`, with derivative `Df(p)` at `0`
-  have hcont : Continuous (fun x : E ↦ p + x) := continuous_const.add continuous_id
-  have hpre {V : Set E} (hV : V ∈ 𝓝 p) : (p + ·) ⁻¹' V ∈ 𝓝 (0 : E) :=
-    hcont.continuousAt.preimage_mem_nhds (by simpa using hV)
-  have hg : ContDiffOn ℝ n (fun x ↦ f (p + x) - p) ((p + ·) ⁻¹' W) :=
-    (hf.comp (contDiff_const.add contDiff_id).contDiffOn fun _ hx ↦ hx).sub contDiffOn_const
-  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by
-    have : (0 : ℕ∞) < n := zero_lt_one.trans_le hn
-    exact_mod_cast this.ne'
-  have hgA : HasFDerivAt (fun x ↦ f (p + x) - p) (fderiv ℝ f p) 0 := by
-    have h1 : HasFDerivAt (fun x : E ↦ p + x) (ContinuousLinearMap.id ℝ E) 0 :=
-      (hasFDerivAt_id 0).const_add p
-    have h2 : HasFDerivAt f (fderiv ℝ f p) (p + 0) := by
-      rw [add_zero]
-      exact ((hf.contDiffAt hW).differentiableAt hn0).hasFDerivAt
-    simpa using (h2.comp 0 h1).sub_const p
-  -- the cut-off, with Lipschitz constant `1 / (2 S.bound)`
-  have hb := S.bound_pos
-  have hη : 0 < (1 / (2 * S.bound)).toNNReal := by simpa using hb
-  obtain ⟨δ, hδ, φ, hφ, hlip, hφ0, hdφ, hEq⟩ :=
-    StableManifold.exists_contDiff_lipschitzWith_eqOn_ball hn (hpre hW) hg (by simp [hfix]) hgA hη
-  let F : StableManifold.Perturbation S :=
-    { φ := φ
-      lip := (1 / (2 * S.bound)).toNNReal
-      lipschitzWith := hlip
-      map_zero := hφ0
-      lip_mul_bound_le := by
-        rw [Real.coe_toNNReal _ (by positivity)]
-        field_simp
-        rfl }
+  obtain ⟨S, F, δ, hδ, hφ, hdφ, hEq⟩ := exists_perturbation_eqOn_ball hn hW hf hfix hsplit
   refine ⟨δ, hδ, F.stableGraph, F.contDiff_stableGraph hφ, F.stableGraph_zero,
     F.fderiv_stableGraph_zero hdφ, fun U hU hUδ ↦ ?_⟩
   have hUδ' : (p + ·) ⁻¹' U ⊆ ball 0 δ := fun x hx ↦ by
     simpa [dist_eq_norm] using hUδ hx
+  have hpre : (p + ·) ⁻¹' U ∈ 𝓝 (0 : E) :=
+    (continuous_const.add continuous_id).continuousAt.preimage_mem_nhds (by simpa using hU)
   obtain ⟨Vs, hVs, hVeq⟩ :=
-    F.exists_localStableSet_map_eq_image (hpre hU) (isBounded_ball.subset hUδ')
+    F.exists_localStableSet_map_eq_image hpre (isBounded_ball.subset hUδ')
   refine ⟨Vs, hVs, ?_⟩
   have hcongr : localStableSet (fun x ↦ f (p + x) - p) 0 ((p + ·) ⁻¹' U) =
       localStableSet F.map 0 ((p + ·) ⁻¹' U) :=
     localStableSet_congr (hEq.mono hUδ')
   rw [StableManifold.localStableSet_eq_image_add, hcongr, hVeq, image_image]
   simp only [add_assoc]
+
+/-- **Convergence is automatic near a hyperbolic fixed point**. Let `f` be `Cⁿ` (`1 ≤ n ≤ ∞`) on a
+neighborhood `W` of a fixed point `p`, and suppose that the stable and unstable subspaces of
+`A = Df(p)` are complementary. Then there is `δ > 0` such that, for every set `U` inside the ball
+of radius `δ` around `p`, a forward orbit that stays in `U` tends to `p`: the local stable set of
+`f|_U` is the set of points whose forward orbit stays in `U`.
+
+Proof: on the ball, `f` is conjugate by the translation to the cut-off map `F`, whose bounded
+orbits lie on the graph (`StableManifold.Perturbation.bddOrbit_iff`) and tend to `0`
+(`StableManifold.Perturbation.tendsto_iterate`). -/
+theorem exists_localStableSet_eq_setOf_forall_iterate_mem {f : E → E} {p : E} {W : Set E}
+    {n : ℕ∞} (hn : 1 ≤ n) (hW : W ∈ 𝓝 p) (hf : ContDiffOn ℝ n f W) (hfix : f p = p)
+    (hsplit : IsCompl (fderiv ℝ f p).stableSubspace (fderiv ℝ f p).unstableSubspace) :
+    ∃ δ > 0, ∀ U ⊆ ball p δ, localStableSet f p U = {x | ∀ k, f^[k] x ∈ U} := by
+  obtain ⟨S, F, δ, hδ, -, -, hEq⟩ := exists_perturbation_eqOn_ball hn hW hf hfix hsplit
+  refine ⟨δ, hδ, fun U hUδ ↦ ?_⟩
+  ext x
+  refine ⟨fun hx ↦ hx.1, fun hx ↦ ⟨hx, ?_⟩⟩
+  have hball (k : ℕ) : f^[k] x - p ∈ ball (0 : E) δ := by
+    rw [mem_ball_zero_iff, ← mem_ball_iff_norm]
+    exact hUδ (hx k)
+  -- the `F`-orbit of `x - p` is the translate of the `f`-orbit of `x`
+  have hit (k : ℕ) : F.map^[k] (x - p) = f^[k] x - p := by
+    induction k with
+    | zero => rfl
+    | succ k ih =>
+      rw [iterate_succ_apply', iterate_succ_apply', ih, ← hEq (hball k)]
+      simp
+  have hgraph : (1 - S.proj) (x - p) = F.graph (x - p) :=
+    (F.bddOrbit_iff _).1 ⟨δ, fun k ↦ by
+      rw [hit]
+      exact (mem_ball_zero_iff.1 (hball k)).le⟩
+  have ht := (F.tendsto_iterate hgraph).const_add p
+  simp only [hit, add_sub_cancel, add_zero] at ht
+  exact ht
 
 end Function

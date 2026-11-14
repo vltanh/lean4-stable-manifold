@@ -18,11 +18,12 @@ Statements of record, in Mathlib's vocabulary, for
 
 * **the stable manifold theorem** for a `Cⁿ` map (`1 ≤ n ≤ ∞`) near a hyperbolic fixed point of a
   finite-dimensional real normed space, in graph form, for the local stable and the local
-  unstable set (J. Hadamard, *Sur l'itération et les solutions asymptotiques des équations
-  différentielles*, Bull. Soc. Math. France 29 (1901), 224–228; O. Perron, *Über Stabilität und
-  asymptotisches Verhalten der Lösungen eines Systems endlicher Differenzengleichungen*, J. Reine
-  Angew. Math. 161 (1929), 41–64; in this form, M. C. Irwin, *Smooth Dynamical Systems*, Academic
-  Press, 1980, Chapter 6);
+  unstable set, for every small neighborhood and for one open neighborhood (J. Hadamard, *Sur
+  l'itération et les solutions asymptotiques des équations différentielles*, Bull. Soc. Math.
+  France 29 (1901), 224–228; O. Perron, *Über Stabilität und asymptotisches Verhalten der
+  Lösungen eines Systems endlicher Differenzengleichungen*, J. Reine Angew. Math. 161 (1929),
+  41–64; in this form, M. C. Irwin, *Smooth Dynamical Systems*, Academic Press, 1980,
+  Chapter 6);
 * **the hyperbolic splitting**: the stable and unstable subspaces of a hyperbolic linear map are
   complementary;
 * two facts that tie the definitions of the unstable subspace and of the local unstable set to
@@ -62,10 +63,10 @@ the statements are the same here and in the library. It defines:
 * `𝓝 x` is the filter of neighborhoods of `x`: `V ∈ 𝓝 x` says that `V` is a neighborhood of `x`,
   not necessarily open.
 * `n : ℕ∞` with `1 ≤ n` is `1, 2, …` or `∞` (`⊤`). `ContDiffOn ℝ n f W`: `f` is of class `Cⁿ` on
-  `W`. Mathlib's smoothness index lives in `WithTop ℕ∞`, whose top element `ω` means analytic;
-  `n` enters it through the coercion `ℕ∞ → WithTop ℕ∞`, so `∞` here is `C^∞` and the analytic
-  class is not covered. With `W ∈ 𝓝 p`, `f` is `Cⁿ` near `p`; `f` is a total function `E → E`,
-  and its values outside `W` are arbitrary.
+  `W`; `ContDiff ℝ n h`: `h` is of class `Cⁿ` on its whole domain. Mathlib's smoothness index
+  lives in `WithTop ℕ∞`, whose top element `ω` means analytic; `n` enters it through the coercion
+  `ℕ∞ → WithTop ℕ∞`, so `∞` here is `C^∞` and the analytic class is not covered. With `W ∈ 𝓝 p`,
+  `f` is `Cⁿ` near `p`; `f` is a total function `E → E`, and its values outside `W` are arbitrary.
 * `fderiv ℝ f p : E →L[ℝ] E` is the derivative `A = Df(p)` of `f` at `p`, which exists since `f` is
   `C¹` near `p`. `(fderiv ℝ f p).IsInvertible`: `A` is a linear isomorphism of `E`, so that `f` is
   a local diffeomorphism at `p`.
@@ -83,23 +84,34 @@ the statements are the same here and in the library. It defines:
 
 ## The theorems
 
-* `StableManifoldChallenge.stable_manifold` (**the stable manifold theorem**): let `f` be `Cⁿ`
-  (`1 ≤ n ≤ ∞`) on a neighborhood of a fixed point `p` of a finite-dimensional real normed space
-  `E`, with derivative `A = Df(p)` invertible and hyperbolic, and let `Eₛ`, `Eᵤ` be the stable and
-  unstable subspaces of `A`. Then there are an open neighborhood `U` of `p` and maps
-  `hₛ : Eₛ → Eᵤ`, `hᵤ : Eᵤ → Eₛ` such that
-  - `hₛ` is `Cⁿ` on a neighborhood `Vₛ` of `0` in `Eₛ`, `hₛ 0 = 0`, `Dhₛ(0) = 0`, and the local
-    stable set of `f` in `U` is the graph `{p + x + hₛ(x) | x ∈ Vₛ}`;
-  - `hᵤ` is `Cⁿ` on a neighborhood `Vᵤ` of `0` in `Eᵤ`, `hᵤ 0 = 0`, `Dhᵤ(0) = 0`, and the local
-    unstable set of `f` in `U` is the graph `{p + y + hᵤ(y) | y ∈ Vᵤ}`.
+* `StableManifoldChallenge.stable_manifold_forall_nhds` (**the stable manifold theorem**): let `f`
+  be `Cⁿ` (`1 ≤ n ≤ ∞`) on a neighborhood of a fixed point `p` of a finite-dimensional real normed
+  space `E`, with derivative `A = Df(p)` invertible and hyperbolic, and let `Eₛ`, `Eᵤ` be the
+  stable and unstable subspaces of `A`. Then there are a neighborhood `N` of `p` and `Cⁿ` maps
+  `hₛ : Eₛ → Eᵤ`, `hᵤ : Eᵤ → Eₛ` with `hₛ 0 = 0`, `Dhₛ(0) = 0`, `hᵤ 0 = 0` and `Dhᵤ(0) = 0`, such
+  that for every neighborhood `U` of `p` inside `N`
+  - the local stable set of `f` in `U` is the graph `{p + x + hₛ(x) | x ∈ Vₛ}` over a
+    neighborhood `Vₛ` of `0` in `Eₛ`, and
+  - the local unstable set of `f` in `U` is the graph `{p + y + hᵤ(y) | y ∈ Vᵤ}` over a
+    neighborhood `Vᵤ` of `0` in `Eᵤ`.
 
-  So, near `p`, the local stable and unstable sets are `Cⁿ` embedded submanifolds through `p`,
-  tangent there to `Eₛ` and to `Eᵤ`, of dimensions `dim Eₛ` and `dim Eᵤ`, with
-  `dim Eₛ + dim Eᵤ = dim E` by the next theorem. This is the standard formulation of the local
-  stable manifold theorem for a `Cⁿ` local diffeomorphism at a hyperbolic fixed point (Irwin's
-  book, Chapter 6). The local stable set is the set of points whose forward orbit stays in `U` and
-  tends to `p`. Some texts leave out the convergence; for `U` inside a small enough ball around
-  `p`, a forward orbit that stays in `U` tends to `p`, and the two definitions agree.
+  The maps `hₛ` and `hᵤ` do not depend on `U`; the neighborhoods `Vₛ` and `Vᵤ` do. So, near `p`,
+  the local stable and unstable sets are `Cⁿ` embedded submanifolds through `p`, tangent there to
+  `Eₛ` and to `Eᵤ`, of dimensions `dim Eₛ` and `dim Eᵤ`, with `dim Eₛ + dim Eᵤ = dim E` by
+  `hyperbolic_splitting`. This is the standard formulation of the local stable manifold theorem
+  for a `Cⁿ` local diffeomorphism at a hyperbolic fixed point (Irwin's book, Chapter 6), for
+  every small neighborhood, such as every ball around `p` of small enough radius. The local stable
+  set is the set of points whose forward orbit stays in `U` and tends to `p`, and the local
+  unstable set the set of points having a backward orbit in `U` that tends to `p`. Some texts
+  leave out the convergence. For `U` inside a small enough neighborhood of `p` the two definitions
+  agree: the library proves that the local stable set in `U` is then the set of points whose
+  forward orbit stays in `U`, and the local unstable set the set of points having a backward orbit
+  in `U` (`Function.exists_nhds_localStableSet_localUnstableSet_eq_setOf`).
+* `StableManifoldChallenge.stable_manifold`: the same for one neighborhood. There are an open
+  neighborhood `U` of `p` and maps `hₛ`, `hᵤ`, `Cⁿ` on neighborhoods `Vₛ`, `Vᵤ` of `0` and
+  vanishing with their derivatives at `0`, whose graphs over `Vₛ` and `Vᵤ` are the local stable
+  and the local unstable set of `f` in `U`. It follows from `stable_manifold_forall_nhds` with `U`
+  the interior of `N`.
 * `StableManifoldChallenge.hyperbolic_splitting` (**the hyperbolic splitting**): for a hyperbolic
   linear map `A` of a finite-dimensional real normed space, `E = Eₛ ⊕ Eᵤ`. (A zero eigenvalue is
   allowed.)
@@ -139,7 +151,9 @@ section General
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The **stable subspace** of `A`: the vectors `v` with `Aⁿ v → 0`. For a hyperbolic `A` it is
-the sum of the generalized eigenspaces of the eigenvalues of modulus `< 1`. -/
+`ker pₛ(A)`, for the factor `pₛ` of the characteristic polynomial with its roots of modulus `< 1`
+(`ContinuousLinearMap.exists_stableSubspace_unstableSubspace_eq_ker_aeval` in the library), that
+is, the sum of the generalized eigenspaces of the eigenvalues of modulus `< 1`. -/
 def stableSubspace (A : E →L[ℝ] E) : Submodule ℝ E where
   carrier := {v | Tendsto (fun n : ℕ ↦ (A ^ n) v) atTop (𝓝 0)}
   add_mem' {v w} hv hw := by
@@ -152,8 +166,10 @@ def stableSubspace (A : E →L[ℝ] E) : Submodule ℝ E where
 
 /-- The **unstable subspace** of `A`: the vectors `v` having a backward orbit tending to `0`
 (`w 0 = v`, `A (w (n + 1)) = w n`, `w n → 0`). For an invertible `A` it is the stable subspace of
-`A⁻¹`; for a hyperbolic `A` it is the sum of the generalized eigenspaces of the eigenvalues of
-modulus `> 1`. -/
+`A⁻¹`; for a hyperbolic `A` it is `ker pᵤ(A)`, for the factor `pᵤ` of the characteristic
+polynomial with its roots of modulus `> 1`
+(`ContinuousLinearMap.exists_stableSubspace_unstableSubspace_eq_ker_aeval` in the library), that
+is, the sum of the generalized eigenspaces of the eigenvalues of modulus `> 1`. -/
 def unstableSubspace (A : E →L[ℝ] E) : Submodule ℝ E where
   carrier := {v | ∃ w : ℕ → E, w 0 = v ∧ (∀ n, A (w (n + 1)) = w n) ∧
     Tendsto w atTop (𝓝 0)}
@@ -186,6 +202,29 @@ end ContinuousLinearMap
 -- END SHARED DEFINITIONS
 
 namespace StableManifoldChallenge
+
+/-- **The stable manifold theorem**, for every small neighborhood, for a `Cⁿ` map (`1 ≤ n ≤ ∞`)
+near a fixed point `p` of a finite-dimensional real normed space, with invertible and hyperbolic
+derivative `A = Df(p)`: there are a neighborhood `N` of `p` and `Cⁿ` maps `hₛ : Eₛ → Eᵤ`,
+`hᵤ : Eᵤ → Eₛ` between the stable and unstable subspaces of `A`, vanishing with their derivatives
+at `0`, such that for every neighborhood `U` of `p` inside `N`, the local stable set of `f` in `U`
+is the graph `{p + x + hₛ x}` of `hₛ` over a neighborhood of `0` in `Eₛ`, and the local unstable
+set of `f` in `U` is the graph `{p + y + hᵤ y}` of `hᵤ` over a neighborhood of `0` in `Eᵤ`. -/
+theorem stable_manifold_forall_nhds {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {f : E → E} {p : E} {W : Set E} {n : ℕ∞} (hn : 1 ≤ n)
+    (hW : W ∈ 𝓝 p) (hf : ContDiffOn ℝ n f W) (hfix : f p = p)
+    (hinv : (fderiv ℝ f p).IsInvertible) (hyp : (fderiv ℝ f p).IsHyperbolic) :
+    ∃ N ∈ 𝓝 p,
+      ∃ hs : (fderiv ℝ f p).stableSubspace → (fderiv ℝ f p).unstableSubspace,
+        ContDiff ℝ n hs ∧ hs 0 = 0 ∧ fderiv ℝ hs 0 = 0 ∧
+      ∃ hu : (fderiv ℝ f p).unstableSubspace → (fderiv ℝ f p).stableSubspace,
+        ContDiff ℝ n hu ∧ hu 0 = 0 ∧ fderiv ℝ hu 0 = 0 ∧
+      ∀ U ∈ 𝓝 p, U ⊆ N →
+        (∃ Vs ∈ 𝓝 (0 : (fderiv ℝ f p).stableSubspace),
+          Function.localStableSet f p U = (fun x ↦ p + ↑x + ↑(hs x)) '' Vs) ∧
+        (∃ Vu ∈ 𝓝 (0 : (fderiv ℝ f p).unstableSubspace),
+          Function.localUnstableSet f p U = (fun y ↦ p + ↑y + ↑(hu y)) '' Vu) := by
+  sorry
 
 /-- **The stable manifold theorem** for a `Cⁿ` map (`1 ≤ n ≤ ∞`) near a fixed point `p` of a
 finite-dimensional real normed space, with invertible and hyperbolic derivative `A = Df(p)`: there

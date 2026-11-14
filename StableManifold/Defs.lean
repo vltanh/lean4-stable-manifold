@@ -60,7 +60,9 @@ section General
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The **stable subspace** of `A`: the vectors `v` with `Aⁿ v → 0`. For a hyperbolic `A` it is
-the sum of the generalized eigenspaces of the eigenvalues of modulus `< 1`. -/
+`ker pₛ(A)`, for the factor `pₛ` of the characteristic polynomial with its roots of modulus `< 1`
+(`ContinuousLinearMap.exists_stableSubspace_unstableSubspace_eq_ker_aeval` in the library), that
+is, the sum of the generalized eigenspaces of the eigenvalues of modulus `< 1`. -/
 def stableSubspace (A : E →L[ℝ] E) : Submodule ℝ E where
   carrier := {v | Tendsto (fun n : ℕ ↦ (A ^ n) v) atTop (𝓝 0)}
   add_mem' {v w} hv hw := by
@@ -73,8 +75,10 @@ def stableSubspace (A : E →L[ℝ] E) : Submodule ℝ E where
 
 /-- The **unstable subspace** of `A`: the vectors `v` having a backward orbit tending to `0`
 (`w 0 = v`, `A (w (n + 1)) = w n`, `w n → 0`). For an invertible `A` it is the stable subspace of
-`A⁻¹`; for a hyperbolic `A` it is the sum of the generalized eigenspaces of the eigenvalues of
-modulus `> 1`. -/
+`A⁻¹`; for a hyperbolic `A` it is `ker pᵤ(A)`, for the factor `pᵤ` of the characteristic
+polynomial with its roots of modulus `> 1`
+(`ContinuousLinearMap.exists_stableSubspace_unstableSubspace_eq_ker_aeval` in the library), that
+is, the sum of the generalized eigenspaces of the eigenvalues of modulus `> 1`. -/
 def unstableSubspace (A : E →L[ℝ] E) : Submodule ℝ E where
   carrier := {v | ∃ w : ℕ → E, w 0 = v ∧ (∀ n, A (w (n + 1)) = w n) ∧
     Tendsto w atTop (𝓝 0)}

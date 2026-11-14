@@ -31,6 +31,8 @@ Elementary facts:
   an orbit tending to `p` eventually lies in the local stable set of every neighborhood of `p`,
   and a backward orbit tending to `p` eventually lies in the local unstable set;
 * `Function.localStableSet_symm_eq_localUnstableSet`: unstable for `e` is stable for `e⁻¹`;
+* `Function.setOf_forall_iterate_symm_mem_eq`: the points whose `e⁻¹`-orbit stays in `U` are the
+  points with a backward `e`-orbit in `U`;
 * `Function.localStableSet_congr`, `Function.localUnstableSet_congr`: the local sets of `f|_U`
   depend only on `f|_U`;
 * `Function.localStableSet_conj`, `Function.localUnstableSet_conj`: conjugating `f` by a
@@ -49,6 +51,7 @@ Elementary facts:
   (`OpenPartialHomeomorph.right_inv`); conversely, a backward `e`-orbit `y` in `U ⊆ e.source`
   has `e.symm (y n) = y (n + 1)` (`OpenPartialHomeomorph.left_inv`), so `y n = e.symm^[n] (y 0)`
   by induction. The second equation is the first one for `e.symm`.
+* `setOf_forall_iterate_symm_mem_eq`: the same two facts, without the limits.
 * `localStableSet_congr`: along an `f`-orbit in `U`, `f^[n] x = g^[n] x` by induction on `n`
   (`Function.iterate_succ_apply'`); symmetrically for `g`. `localUnstableSet_congr`: a backward
   orbit `y` in `U` has `f (y (n + 1)) = g (y (n + 1))`.
@@ -113,6 +116,21 @@ theorem eventually_mem_localUnstableSet {f : X → X} {p : X} {U : Set X} (hU : 
   rw [Nat.add_right_comm]
   exact hy _
 
+/-- A forward `e⁻¹`-orbit in `U ⊆ e.target` is a backward `e`-orbit. -/
+private lemma apply_iterate_symm_succ (e : OpenPartialHomeomorph X X) {U : Set X}
+    (hU : U ⊆ e.target) {x : X} (hx : ∀ n, e.symm^[n] x ∈ U) (n : ℕ) :
+    e (e.symm^[n + 1] x) = e.symm^[n] x := by
+  rw [iterate_succ_apply']
+  exact e.right_inv (hU (hx n))
+
+/-- A backward `e`-orbit in `U ⊆ e.source` is the forward `e⁻¹`-orbit of its first point. -/
+private lemma iterate_symm_eq_of_backward (e : OpenPartialHomeomorph X X) {U : Set X}
+    (hU : U ⊆ e.source) {y : ℕ → X} (hy : ∀ n, y n ∈ U ∧ e (y (n + 1)) = y n) (n : ℕ) :
+    e.symm^[n] (y 0) = y n := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [iterate_succ_apply', ih, ← (hy n).2, e.left_inv (hU (hy (n + 1)).1)]
+
 /-- One half of `localStableSet_symm_eq_localUnstableSet`. -/
 private lemma localStableSet_symm_eq_localUnstableSet_aux (e : OpenPartialHomeomorph X X) {p : X}
     {U : Set X} (hU : U ⊆ e.source ∩ e.target) :
@@ -120,17 +138,10 @@ private lemma localStableSet_symm_eq_localUnstableSet_aux (e : OpenPartialHomeom
   ext x
   constructor
   · rintro ⟨hxU, hxt⟩
-    refine ⟨fun n ↦ e.symm^[n] x, rfl, fun n ↦ ⟨hxU n, ?_⟩, hxt⟩
-    change e (e.symm^[n + 1] x) = e.symm^[n] x
-    rw [iterate_succ_apply']
-    exact e.right_inv (hU (hxU n)).2
+    exact ⟨fun n ↦ e.symm^[n] x, rfl, fun n ↦ ⟨hxU n,
+      apply_iterate_symm_succ e (hU.trans inter_subset_right) hxU n⟩, hxt⟩
   · rintro ⟨y, rfl, hy, hyt⟩
-    have hit : ∀ n, e.symm^[n] (y 0) = y n := by
-      intro n
-      induction n with
-      | zero => rfl
-      | succ n ih =>
-        rw [iterate_succ_apply', ih, ← (hy n).2, e.left_inv (hU (hy (n + 1)).1).1]
+    have hit := iterate_symm_eq_of_backward e (hU.trans inter_subset_left) hy
     exact ⟨fun n ↦ (hit n).symm ▸ (hy n).1, hyt.congr fun n ↦ (hit n).symm⟩
 
 /-- **Unstable for `f` means stable for `f⁻¹`**: for an open partial homeomorphism `e` and a set
@@ -149,6 +160,25 @@ theorem localStableSet_symm_eq_localUnstableSet (e : OpenPartialHomeomorph X X) 
   have h := localStableSet_symm_eq_localUnstableSet_aux e.symm (p := p)
     (hU.trans (inter_comm _ _).subset)
   rwa [OpenPartialHomeomorph.symm_symm, eq_comm] at h
+
+/-- **A forward `e⁻¹`-orbit is a backward `e`-orbit**: for an open partial homeomorphism `e` and a
+set `U` inside both its source and its target, the points whose forward `e⁻¹`-orbit stays in `U`
+are the points having a backward `e`-orbit in `U`.
+
+Proof: as for `localStableSet_symm_eq_localUnstableSet`, without the limits: `n ↦ e.symm^[n] x`
+is a backward `e`-orbit, and a backward `e`-orbit `y` in `U` is `n ↦ e.symm^[n] (y 0)`. -/
+theorem setOf_forall_iterate_symm_mem_eq (e : OpenPartialHomeomorph X X) {U : Set X}
+    (hU : U ⊆ e.source ∩ e.target) :
+    {x | ∀ n, e.symm^[n] x ∈ U} =
+      {x | ∃ y : ℕ → X, y 0 = x ∧ ∀ n, y n ∈ U ∧ e (y (n + 1)) = y n} := by
+  ext x
+  constructor
+  · intro hx
+    exact ⟨fun n ↦ e.symm^[n] x, rfl, fun n ↦ ⟨hx n,
+      apply_iterate_symm_succ e (hU.trans inter_subset_right) hx n⟩⟩
+  · rintro ⟨y, rfl, hy⟩ n
+    rw [iterate_symm_eq_of_backward e (hU.trans inter_subset_left) hy n]
+    exact (hy n).1
 
 omit [TopologicalSpace X] in
 /-- Along an `f`-orbit in `U`, the iterates of `f` and of any `g` equal to `f` on `U` agree. -/
@@ -185,8 +215,9 @@ theorem localUnstableSet_congr {f g : X → X} {p : X} {U : Set X} (h : EqOn f g
 stable set of `e ∘ f ∘ e⁻¹` at `e p` in `e '' U` is the image by `e` of the local stable set of `f`
 at `p` in `U`.
 
-Proof: `(e ∘ f ∘ e.symm)^[n] = e ∘ f^[n] ∘ e.symm` (by induction on `n`), `e y ∈ e '' U ↔ y ∈ U`,
-and `e`, `e.symm` are continuous, so they carry convergent orbits to convergent orbits. -/
+Proof: `(e ∘ f ∘ e.symm)^[n] (e x) = e (f^[n] x)` (`Function.Semiconj.iterate_right`),
+`e y ∈ e '' U ↔ y ∈ U`, and `e`, `e.symm` are continuous, so they carry convergent orbits to
+convergent orbits. -/
 theorem localStableSet_conj {Y : Type*} [TopologicalSpace Y] (e : X ≃ₜ Y) (f : X → X) (p : X)
     (U : Set X) :
     localStableSet (e ∘ f ∘ e.symm) (e p) (e '' U) = e '' localStableSet f p U := by

@@ -8,14 +8,18 @@ project:
     class C^n, 1 <= n <= infinity, on a neighborhood of a fixed point p of a finite-dimensional
     real normed space E, with derivative A = Df(p) invertible and hyperbolic (no complex
     eigenvalue of modulus 1), and let E_s and E_u be the stable and unstable subspaces of A. Then
-    there are an open neighborhood U of p and maps h_s : E_s -> E_u and h_u : E_u -> E_s, of class
-    C^n near 0 and vanishing with their derivatives at 0, such that the local stable set of f in
-    U (the points whose forward orbit stays in U and tends to p) is the graph {p + x + h_s(x)} of
-    h_s over a neighborhood of 0 in E_s, and the local unstable set (the points with a backward
-    orbit in U tending to p) is the graph {p + y + h_u(y)} of h_u over a neighborhood of 0 in
-    E_u. The stable side is also proved without invertibility, with one h_s for every
-    neighborhood inside a small ball around p. Also proved: the hyperbolic splitting E = E_s (+)
-    E_u for a hyperbolic linear map of a finite-dimensional real space.
+    there are a neighborhood N of p and maps h_s : E_s -> E_u and h_u : E_u -> E_s, of class C^n
+    and vanishing with their derivatives at 0, such that for every neighborhood U of p inside N,
+    the local stable set of f in U (the points whose forward orbit stays in U and tends to p) is
+    the graph {p + x + h_s(x)} of h_s over a neighborhood of 0 in E_s, and the local unstable set
+    (the points with a backward orbit in U tending to p) is the graph {p + y + h_u(y)} of h_u over
+    a neighborhood of 0 in E_u. Inside a small neighborhood of p the convergence is automatic: the
+    local stable set in U is the set of points whose forward orbit stays in U, and the local
+    unstable set the set of points with a backward orbit in U. The stable side is also proved
+    without invertibility, with one h_s for every neighborhood inside a small ball around p. Also
+    proved: the hyperbolic splitting E = E_s (+) E_u for a hyperbolic linear map of a
+    finite-dimensional real space, with E_s and E_u the kernels of the factors of the
+    characteristic polynomial with roots inside and outside the unit circle.
 
 
     The proof is Perron's method on the Banach space of bounded sequences. The splitting comes
@@ -132,14 +136,16 @@ related_formalizations:
     note: >-
       Lean 4 / Mathlib (TauCeti, Apache-2.0), concurrent: the stable and unstable manifold theorem
       for an equilibrium of a C^n vector field (a flow) in a finite-dimensional real normed space,
-      assuming an exponential dichotomy of the linearization
+      for a linearization with an exponential dichotomy
       (ContinuousLinearMap.exists_localStableGraph_of_contDiffAt and
       exists_localUnstableGraph_of_contDiffAt, the latter at line 368; the vector-field theorem was
       first committed on 2026-11-06), by a Lyapunov-Perron contraction on bounded continuous curves
-      and the implicit function theorem; also the continuous-time dichotomy from the absence of
-      eigenvalues on the imaginary axis (ExponentialDichotomy/Hyperbolic.lean) and superposition
-      operators on bounded continuous functions (FDeriv/BoundedContinuousFunction.lean). This work
-      treats maps, assumes only hyperbolicity, and does not use or adapt that development.
+      and the implicit function theorem. It derives the dichotomy from the spectral condition, no
+      eigenvalue on the imaginary axis (exists_projection_exponential_bounds_of_charpoly in
+      ExponentialDichotomy/Hyperbolic.lean), and has superposition operators on bounded continuous
+      functions (FDeriv/BoundedContinuousFunction.lean). It treats flows, with the spectral
+      condition on the imaginary axis; this work treats maps, with the spectral condition on the
+      unit circle, and does not use or adapt that development.
   - id: "https://github.com/leanprover/lean-eval/blob/8955681b9914d7ebc7d286414843021b7d6c9de1/LeanEval/Dynamics/StableUnstableManifolds.lean#L51"
     relationship: "other"
     note: >-
@@ -169,18 +175,23 @@ status:
   scope: >-
     Formalized: the stable manifold theorem for a map that is C^n (1 <= n <= infinity) on a
     neighborhood of a fixed point of a finite-dimensional real normed space with invertible
-    hyperbolic derivative, in graph form, for the local stable set and the local unstable set on
-    one open neighborhood, with tangency to the stable and unstable subspaces; the stable side
-    without invertibility, with one graph map for every neighborhood inside a small ball; the
-    hyperbolic splitting E = E_s (+) E_u for a hyperbolic linear map, and the disjointness of the
-    two subspaces for every linear map in finite dimension; Gelfand's formula for real operators
+    hyperbolic derivative, in graph form, for the local stable set and the local unstable set,
+    with one pair of C^n graph maps for every neighborhood inside a small neighborhood N of the
+    point, and also on one open neighborhood, with tangency to the stable and unstable subspaces;
+    inside a small neighborhood, the local stable set as the set of points whose forward orbit
+    stays in U and the local unstable set as the set of points with a backward orbit in U; the
+    stable side without invertibility, with one graph map for every neighborhood inside a small
+    ball; the hyperbolic splitting E = E_s (+) E_u for a hyperbolic linear map, with E_s and E_u
+    the kernels of the factors of the characteristic polynomial with roots inside and outside
+    the unit circle, and the disjointness of the two subspaces for every linear map in finite
+    dimension; Gelfand's formula for real operators
     in the form that a spectrum inside the open unit disk gives a power of norm < 1; exponential
     dichotomies; the linear Lyapunov-Perron operator and, in any real Banach space, the global
     stable manifold of a globally small Lipschitz perturbation of a linear map with an
     exponential dichotomy (bounded orbits as a Lipschitz graph, geometric decay, tangency);
     superposition operators on bounded sequences, and their C^n regularity in finite dimension.
-    The Challenge states the stable manifold theorem (both sides), the hyperbolic splitting, and
-    two facts that tie the backward-orbit definitions of the unstable subspace and of the local
+    The Challenge states the stable manifold theorem (both sides, for every small neighborhood and
+    for one open neighborhood), the hyperbolic splitting, and two facts that tie the backward-orbit definitions of the unstable subspace and of the local
     unstable set to the stable ones of the inverse. Not formalized: flows and vector fields;
     infinite-dimensional spaces for the smooth theorem; analytic or Holder regularity; global
     stable and unstable manifolds as injectively immersed submanifolds; dependence of the local
@@ -214,19 +225,24 @@ fidelity:
   divergences: >-
     Statements. The Challenge states the theorem in its standard local form, with these readings.
     The local stable set of f in U is the set of points whose forward orbit stays in U and tends
-    to p; some texts omit the convergence, which follows for U inside a small enough ball. The
-    local unstable set is the set of points with a backward orbit in U tending to p, which needs
-    no inverse of f; for an invertible map it is the local stable set of the inverse (stated in
-    the Challenge). The stable subspace is {v | A^k v -> 0} and the unstable subspace the set of
-    vectors with a backward A-orbit tending to 0, which for invertible A is the stable subspace of
-    A^-1 (stated in the Challenge); for hyperbolic A these are the sums of the generalized
-    eigenspaces of the eigenvalues inside and outside the unit circle, which is not formalized.
-    Hyperbolicity means that no complex root of the characteristic polynomial of A has modulus 1.
-    The neighborhood U is given by the theorem, as in the textbook statement; the library proves
-    the stable side for every neighborhood inside a small ball. The graph maps are C^n on
-    neighborhoods of 0 (the construction makes them C^n on the whole subspace, which the library
-    states for the stable side), and tangency is stated as the vanishing of their derivatives at
-    0. Smoothness classes are C^n for n in
+    to p; some texts omit the convergence, which follows for U inside a small enough neighborhood
+    of p (proved in the library, for both sides:
+    Function.exists_nhds_localStableSet_localUnstableSet_eq_setOf). The local unstable set is the
+    set of points with a backward orbit in U tending to p, which needs no inverse of f; for an
+    invertible map it is the local stable set of the inverse (stated in the Challenge). The stable
+    subspace is {v | A^k v -> 0} and the unstable subspace the set of vectors with a backward
+    A-orbit tending to 0, which for invertible A is the stable subspace of A^-1 (stated in the
+    Challenge); for hyperbolic A they are the kernels p_s(A) and p_u(A) of the factors of the
+    characteristic polynomial with roots inside and outside the unit circle (proved in the
+    library: ContinuousLinearMap.exists_stableSubspace_unstableSubspace_eq_ker_aeval), that is,
+    by the primary decomposition, which is not formalized, the sums of the generalized eigenspaces
+    of these eigenvalues. Hyperbolicity means that no complex root of the characteristic
+    polynomial of A has modulus 1. The main Challenge statement gives a neighborhood N of p and
+    one pair of graph maps for every neighborhood U of p inside N, the usual "for every small
+    neighborhood" form; a second Challenge statement gives one open neighborhood U, as in some
+    textbook statements. In the first, the graph maps are C^n on the whole subspaces; in the
+    second, C^n on the neighborhoods of 0 over which they describe the local sets. Tangency is
+    stated as the vanishing of their derivatives at 0. Smoothness classes are C^n for n in
     {1, 2, ..., infinity}; the space is any finite-dimensional real normed space, the statement
     not depending on the norm.
 
@@ -246,28 +262,39 @@ fidelity:
     the complexified matrix, rather than by the Jordan form or Riesz projections.
 
 review:
-  status: "unchecked"
+  status: "agent-reviewed"
   reviewers:
-    - "none"
+    - "an independent AI agent"
   notes: >-
-    No person has reviewed the statements or the proofs. Lean's kernel checks the proofs, and
-    Comparator, with Lean's kernel and the NanoDa kernel, checks that StableManifoldSolution.lean
-    proves the statements of StableManifoldChallenge.lean using only propext, Classical.choice
-    and Quot.sound.
+    An independent AI agent reviewed the definitions and the statements against the standard
+    sources (Irwin, Smooth Dynamical Systems, Chapter 6; Hirsch, Pugh and Shub, Invariant
+    Manifolds; Shub, Global Stability of Dynamical Systems). No person has reviewed the
+    statements or the proofs. Lean's kernel checks the proofs, and Comparator, with Lean's kernel
+    and the NanoDa kernel, checks that StableManifoldSolution.lean proves the statements of
+    StableManifoldChallenge.lean using only propext, Classical.choice and Quot.sound.
 
 alignment:
   namespace: "StableManifoldChallenge"
   statements:
     - source: "The stable manifold theorem at a hyperbolic fixed point (Irwin, Smooth Dynamical Systems, Chapter 6)"
-      lean: "StableManifoldChallenge.stable_manifold"
+      lean: "StableManifoldChallenge.stable_manifold_forall_nhds"
       module: "StableManifoldChallenge"
       status: "proved"
       note: >-
         For f of class C^n (1 <= n <= infinity) near a fixed point p of a finite-dimensional real
-        normed space, with invertible hyperbolic derivative A: an open neighborhood U of p and maps
-        h_s : E_s -> E_u, h_u : E_u -> E_s, C^n near 0 and vanishing with their derivatives at 0,
-        whose graphs p + x + h_s(x), p + y + h_u(y) over neighborhoods of 0 are the local stable
-        and local unstable sets of f in U.
+        normed space, with invertible hyperbolic derivative A: a neighborhood N of p and C^n maps
+        h_s : E_s -> E_u, h_u : E_u -> E_s, vanishing with their derivatives at 0, such that for
+        every neighborhood U of p inside N, the graphs p + x + h_s(x), p + y + h_u(y) over
+        neighborhoods of 0 are the local stable and local unstable sets of f in U.
+    - source: "The stable manifold theorem at a hyperbolic fixed point, for one neighborhood (Irwin, Smooth Dynamical Systems, Chapter 6)"
+      lean: "StableManifoldChallenge.stable_manifold"
+      module: "StableManifoldChallenge"
+      status: "proved"
+      note: >-
+        For f as above: an open neighborhood U of p and maps h_s : E_s -> E_u, h_u : E_u -> E_s,
+        C^n near 0 and vanishing with their derivatives at 0, whose graphs p + x + h_s(x),
+        p + y + h_u(y) over neighborhoods of 0 are the local stable and local unstable sets of f
+        in U. It follows from the previous statement with U the interior of N.
     - source: "The hyperbolic splitting of a hyperbolic linear map"
       lean: "StableManifoldChallenge.hyperbolic_splitting"
       module: "StableManifoldChallenge"

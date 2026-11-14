@@ -16,9 +16,12 @@ public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
 For a hyperbolic linear map `A` of a finite-dimensional real normed space, the stable and unstable
 subspaces are complementary, `E = Eₛ ⊕ Eᵤ`
-(`ContinuousLinearMap.isCompl_stableSubspace_unstableSubspace`). They are the sums of the
-generalized eigenspaces of the eigenvalues of modulus `< 1`, resp. `> 1`; a zero eigenvalue is
-allowed.
+(`ContinuousLinearMap.isCompl_stableSubspace_unstableSubspace`); a zero eigenvalue is allowed.
+They are `Eₛ = ker pₛ(A)` and `Eᵤ = ker pᵤ(A)`, for the coprime factors `pₛ`, `pᵤ` of the
+characteristic polynomial with all complex roots inside, resp. outside, the unit circle
+(`ContinuousLinearMap.exists_stableSubspace_unstableSubspace_eq_ker_aeval`); by the primary
+decomposition, these are the sums of the generalized eigenspaces of the eigenvalues of modulus
+`< 1`, resp. `> 1`.
 
 * `Polynomial.norm_eq_of_irreducible`: the complex roots of an irreducible real polynomial all
   have the same modulus;
@@ -32,7 +35,9 @@ allowed.
 * `ContinuousLinearMap.ker_aeval_le_stableSubspace`, `ker_aeval_le_unstableSubspace`: the kernel of
   `pₛ(A)` lies in the stable subspace, the kernel of `pᵤ(A)` in the unstable one;
 * `ContinuousLinearMap.codisjoint_stableSubspace_unstableSubspace`: for a hyperbolic `A`,
-  `Eₛ ⊔ Eᵤ = ⊤`.
+  `Eₛ ⊔ Eᵤ = ⊤`;
+* `ContinuousLinearMap.exists_stableSubspace_unstableSubspace_eq_ker_aeval`: for a hyperbolic `A`,
+  `Eₛ = ker pₛ(A)` and `Eᵤ = ker pᵤ(A)`.
 
 ## Proofs
 
@@ -72,6 +77,10 @@ allowed.
   `ker pₛ(A) ⊔ ker pᵤ(A) = ker (pₛ pᵤ)(A) = ⊤`
   (`Polynomial.sup_ker_aeval_eq_ker_aeval_mul_of_coprime`; `χ ∣ pₛ pᵤ` and Cayley–Hamilton,
   `LinearMap.aeval_self_charpoly`), and the two kernels lie in `Eₛ` and `Eᵤ`.
+* `exists_stableSubspace_unstableSubspace_eq_ker_aeval`: the same `pₛ`, `pᵤ`. A `v ∈ Eₛ` is
+  `a + b` with `a ∈ ker pₛ(A) ≤ Eₛ` and `b ∈ ker pᵤ(A) ≤ Eᵤ` (`Submodule.mem_sup`); then
+  `b = v - a ∈ Eₛ ⊓ Eᵤ = 0` (`disjoint_stableSubspace_unstableSubspace`), so `v = a`. The same
+  argument, with the roles exchanged, gives `Eᵤ ≤ ker pᵤ(A)`.
 -/
 
 @[expose] public section
@@ -323,6 +332,21 @@ theorem ker_aeval_le_unstableSubspace (A : E →L[ℝ] E) {q : ℝ[X]}
   rw [pow_succ', mul_apply_eq_comp, ← hTy, ContinuousLinearEquiv.coe_coe,
     T.apply_symm_apply]
 
+/-- For a hyperbolic `A`, the characteristic polynomial is, up to a unit, a product `pₛ pᵤ` of
+coprime factors with all complex roots inside, resp. outside, the unit circle, whose kernels at `A`
+span the space (Cayley–Hamilton). -/
+private lemma exists_factors_sup_ker_aeval_eq_top {A : E →L[ℝ] E} (hA : A.IsHyperbolic) :
+    ∃ ps pu : ℝ[X], Associated (ps * pu) (LinearMap.charpoly (A : E →ₗ[ℝ] E)) ∧
+      IsCoprime ps pu ∧ (∀ μ : ℂ, aeval μ ps = 0 → ‖μ‖ < 1) ∧
+      (∀ μ : ℂ, aeval μ pu = 0 → 1 < ‖μ‖) ∧
+      LinearMap.ker (aeval (A : E →ₗ[ℝ] E) ps) ⊔ LinearMap.ker (aeval (A : E →ₗ[ℝ] E) pu) = ⊤ := by
+  obtain ⟨ps, pu, hassoc, hcop, hs, hu⟩ :=
+    exists_isCoprime_roots_lt_one_one_lt (LinearMap.charpoly_monic (A : E →ₗ[ℝ] E)).ne_zero hA
+  refine ⟨ps, pu, hassoc, hcop, hs, hu, ?_⟩
+  rw [sup_ker_aeval_eq_ker_aeval_mul_of_coprime _ hcop, LinearMap.ker_eq_top]
+  obtain ⟨r, hr⟩ := hassoc.symm.dvd
+  rw [hr, aeval_mul, LinearMap.aeval_self_charpoly, zero_mul]
+
 /-- For a hyperbolic `A`, the stable and unstable subspaces **span** the space.
 
 Proof: factor the characteristic polynomial `χ` as `pₛ pᵤ` (up to a unit) with coprime factors
@@ -331,15 +355,45 @@ Proof: factor the characteristic polynomial `χ` as `pₛ pᵤ` (up to a unit) w
 `LinearMap.aeval_self_charpoly`), and `ker pₛ(A) ≤ Eₛ`, `ker pᵤ(A) ≤ Eᵤ`. -/
 theorem codisjoint_stableSubspace_unstableSubspace {A : E →L[ℝ] E} (hA : A.IsHyperbolic) :
     Codisjoint A.stableSubspace A.unstableSubspace := by
-  obtain ⟨ps, pu, hassoc, hcop, hs, hu⟩ :=
-    exists_isCoprime_roots_lt_one_one_lt (LinearMap.charpoly_monic (A : E →ₗ[ℝ] E)).ne_zero hA
-  have htop : LinearMap.ker (aeval (A : E →ₗ[ℝ] E) ps) ⊔
-      LinearMap.ker (aeval (A : E →ₗ[ℝ] E) pu) = ⊤ := by
-    rw [sup_ker_aeval_eq_ker_aeval_mul_of_coprime _ hcop, LinearMap.ker_eq_top]
-    obtain ⟨r, hr⟩ := hassoc.symm.dvd
-    rw [hr, aeval_mul, LinearMap.aeval_self_charpoly, zero_mul]
+  obtain ⟨ps, pu, -, -, hs, hu, htop⟩ := exists_factors_sup_ker_aeval_eq_top hA
   rw [codisjoint_iff, eq_top_iff, ← htop]
   exact sup_le_sup (ker_aeval_le_stableSubspace A hs) (ker_aeval_le_unstableSubspace A hu)
+
+omit [FiniteDimensional ℝ E] in
+/-- If `K' ≤ K` and `L' ≤ L` with `K' ⊔ L' = ⊤` and `K ⊓ L = 0`, then `K = K'`. -/
+private lemma eq_of_le_of_sup_eq_top {K L K' L' : Submodule ℝ E} (hK : K' ≤ K) (hL : L' ≤ L)
+    (htop : K' ⊔ L' = ⊤) (hdis : Disjoint K L) : K = K' := by
+  refine le_antisymm (fun v hv ↦ ?_) hK
+  have hv' : v ∈ K' ⊔ L' := by
+    rw [htop]
+    exact Submodule.mem_top
+  obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.1 hv'
+  have hbK : b ∈ K := by simpa using K.sub_mem hv (hK ha)
+  rw [Submodule.disjoint_def.1 hdis b hbK (hL hb), add_zero]
+  exact ha
+
+/-- **The stable and unstable subspaces as kernels**: for a hyperbolic `A`, the characteristic
+polynomial is, up to a unit, a product `pₛ pᵤ` of coprime real polynomials with all complex roots
+inside, resp. outside, the unit circle, and `Eₛ = ker pₛ(A)`, `Eᵤ = ker pᵤ(A)`. By the primary
+decomposition, these kernels are the sums of the generalized eigenspaces of the eigenvalues of
+modulus `< 1`, resp. `> 1`.
+
+Proof: `ker pₛ(A) ⊔ ker pᵤ(A) = ⊤`, `ker pₛ(A) ≤ Eₛ`, `ker pᵤ(A) ≤ Eᵤ`, and `Eₛ ⊓ Eᵤ = 0`
+(`disjoint_stableSubspace_unstableSubspace`): a `v ∈ Eₛ` is `a + b` with `a ∈ ker pₛ(A)`,
+`b ∈ ker pᵤ(A)`, and `b = v - a ∈ Eₛ ⊓ Eᵤ` is `0`; symmetrically for `Eᵤ`. -/
+theorem exists_stableSubspace_unstableSubspace_eq_ker_aeval {A : E →L[ℝ] E}
+    (hA : A.IsHyperbolic) :
+    ∃ ps pu : ℝ[X], Associated (ps * pu) (LinearMap.charpoly (A : E →ₗ[ℝ] E)) ∧
+      IsCoprime ps pu ∧ (∀ μ : ℂ, aeval μ ps = 0 → ‖μ‖ < 1) ∧
+      (∀ μ : ℂ, aeval μ pu = 0 → 1 < ‖μ‖) ∧
+      A.stableSubspace = LinearMap.ker (aeval (A : E →ₗ[ℝ] E) ps) ∧
+      A.unstableSubspace = LinearMap.ker (aeval (A : E →ₗ[ℝ] E) pu) := by
+  obtain ⟨ps, pu, hassoc, hcop, hs, hu, htop⟩ := exists_factors_sup_ker_aeval_eq_top hA
+  have hKs := ker_aeval_le_stableSubspace A hs
+  have hKu := ker_aeval_le_unstableSubspace A hu
+  have hdis := A.disjoint_stableSubspace_unstableSubspace
+  exact ⟨ps, pu, hassoc, hcop, hs, hu, eq_of_le_of_sup_eq_top hKs hKu htop hdis,
+    eq_of_le_of_sup_eq_top hKu hKs (by rwa [sup_comm] at htop) hdis.symm⟩
 
 /-- **The hyperbolic splitting**: for a hyperbolic linear map the stable and unstable subspaces are
 complementary, `E = Eₛ ⊕ Eᵤ`. -/

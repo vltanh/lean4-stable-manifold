@@ -43,13 +43,18 @@ namespace Audit
 
 /-- The main theorems of the library, and the Challenge's theorems as the Solution proves them. -/
 meta def mainResults : List Name :=
-  [``Function.exists_localStableSet_localUnstableSet_eq_graph,
+  [``Function.exists_nhds_localStableSet_localUnstableSet_eq_graph,
+   ``Function.exists_localStableSet_localUnstableSet_eq_graph,
+   ``Function.exists_nhds_localStableSet_localUnstableSet_eq_setOf,
    ``Function.exists_localStableSet_eq_graph_of_isCompl,
+   ``Function.exists_localStableSet_eq_setOf_forall_iterate_mem,
+   ``Function.setOf_forall_iterate_symm_mem_eq,
    ``Function.exists_openPartialHomeomorph_contDiffOn_symm,
    ``Function.localStableSet_symm_eq_localUnstableSet,
    ``ContinuousLinearMap.isCompl_stableSubspace_unstableSubspace,
    ``ContinuousLinearMap.disjoint_stableSubspace_unstableSubspace,
    ``ContinuousLinearMap.codisjoint_stableSubspace_unstableSubspace,
+   ``ContinuousLinearMap.exists_stableSubspace_unstableSubspace_eq_ker_aeval,
    ``ContinuousLinearMap.stableSubspace_symm,
    ``ContinuousLinearMap.unstableSubspace_symm,
    ``ContinuousLinearMap.nonempty_hyperbolicSplitting,
@@ -64,6 +69,7 @@ meta def mainResults : List Name :=
    ``StableManifold.Perturbation.hasFDerivAt_graph_zero,
    ``StableManifold.Perturbation.contDiff_graph,
    ``StableManifold.Perturbation.exists_localStableSet_map_eq_image,
+   ``StableManifoldChallenge.stable_manifold_forall_nhds,
    ``StableManifoldChallenge.stable_manifold,
    ``StableManifoldChallenge.hyperbolic_splitting,
    ``StableManifoldChallenge.stableSubspace_symm,
@@ -103,6 +109,7 @@ elab "#audit" : command => do
 
 end Audit
 
+#print axioms Function.exists_nhds_localStableSet_localUnstableSet_eq_graph
 #print axioms Function.exists_localStableSet_localUnstableSet_eq_graph
 #print axioms Function.exists_localStableSet_eq_graph_of_isCompl
 #print axioms ContinuousLinearMap.isCompl_stableSubspace_unstableSubspace
@@ -154,6 +161,26 @@ example (d : ℕ) (f : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin d)
     Function.exists_localStableSet_localUnstableSet_eq_graph le_top univ_mem hf.contDiffOn hfix
       hinv hyp
   exact ⟨U, hU, Vs, hVs, hs, hsC, heq⟩
+
+open Filter Topology Metric in
+/-- One pair of graph maps serves for every ball around `p` of small radius: the usual "for every
+small `ε`" form of the theorem. -/
+example {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {f : E → E} {p : E} {W : Set E} {n : ℕ∞} (hn : 1 ≤ n) (hW : W ∈ 𝓝 p)
+    (hf : ContDiffOn ℝ n f W) (hfix : f p = p) (hinv : (fderiv ℝ f p).IsInvertible)
+    (hyp : (fderiv ℝ f p).IsHyperbolic) :
+    ∃ hs : (fderiv ℝ f p).stableSubspace → (fderiv ℝ f p).unstableSubspace,
+      ∃ hu : (fderiv ℝ f p).unstableSubspace → (fderiv ℝ f p).stableSubspace,
+      ∃ ε₀ > 0, ∀ ε ∈ Set.Ioc 0 ε₀,
+        (∃ Vs ∈ 𝓝 (0 : (fderiv ℝ f p).stableSubspace),
+          Function.localStableSet f p (ball p ε) = (fun x ↦ p + ↑x + ↑(hs x)) '' Vs) ∧
+        (∃ Vu ∈ 𝓝 (0 : (fderiv ℝ f p).unstableSubspace),
+          Function.localUnstableSet f p (ball p ε) = (fun y ↦ p + ↑y + ↑(hu y)) '' Vu) := by
+  obtain ⟨N, hN, hs, -, -, -, hu, -, -, -, hNU⟩ :=
+    Function.exists_nhds_localStableSet_localUnstableSet_eq_graph hn hW hf hfix hinv hyp
+  obtain ⟨ε₀, hε₀, hball⟩ := Metric.mem_nhds_iff.1 hN
+  exact ⟨hs, hu, ε₀, hε₀, fun ε hε ↦ hNU _ (ball_mem_nhds p hε.1)
+    ((ball_subset_ball hε.2).trans hball)⟩
 
 /-- For a hyperbolic linear map, the dimensions of the stable and unstable subspaces add up to the
 dimension of the space. -/

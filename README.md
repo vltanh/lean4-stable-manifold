@@ -1,11 +1,11 @@
 # The stable manifold theorem in Lean
 
 The stable manifold theorem in Lean 4 with Mathlib, for a `Cⁿ` map (`1 ≤ n ≤ ∞`) near a
-hyperbolic fixed point `p` of a finite-dimensional real normed space: the local stable set is the
-graph of a `Cⁿ` map from the stable subspace to the unstable one, tangent to the stable subspace
-at `p`, and the local unstable set is such a graph over the unstable subspace. The proof is
-Perron's method on the Banach space of bounded sequences, with smoothness of every order from the
-smoothness of composition operators.
+hyperbolic fixed point `p` of a finite-dimensional real normed space: in every small neighborhood
+of `p`, the local stable set is the graph of a `Cⁿ` map from the stable subspace to the unstable
+one, tangent to the stable subspace at `p`, and the local unstable set is such a graph over the
+unstable subspace. The proof is Perron's method on the Banach space of bounded sequences, with
+smoothness of every order from the smoothness of composition operators.
 
 There is no `axiom` or `native_decide`, and no `sorry` outside the statements of
 [`StableManifoldChallenge.lean`](StableManifoldChallenge.lean).
@@ -19,26 +19,13 @@ statements in words and in Lean, and the proof module by module, are in
 
 | Lean | Statement |
 | --- | --- |
-| [`Function.exists_localStableSet_localUnstableSet_eq_graph`](StableManifold/Theorem.lean#L133) | if `f` is `Cⁿ` near a fixed point `p` and `A` is invertible and hyperbolic, there are an open `U ∋ p` and `Cⁿ` maps `hₛ : Eₛ → Eᵤ`, `hᵤ : Eᵤ → Eₛ`, vanishing with their derivatives at `0`, whose graphs `p + x + hₛ x`, `p + y + hᵤ y` over neighborhoods of `0` are the local stable and unstable sets of `f` in `U` |
-| [`Function.exists_localStableSet_eq_graph_of_isCompl`](StableManifold/Local/StableSet.lean#L217) | the stable side, with one `hₛ` for every neighborhood `U` inside a small ball around `p`, assuming only `E = Eₛ ⊕ Eᵤ` (`A` may be singular) |
-| [`ContinuousLinearMap.isCompl_stableSubspace_unstableSubspace`](StableManifold/Linear/Splitting.lean#L346) | the hyperbolic splitting: `E = Eₛ ⊕ Eᵤ` when no complex eigenvalue of `A` has modulus `1` |
+| [`Function.exists_nhds_localStableSet_localUnstableSet_eq_graph`](StableManifold/Theorem.lean#L191) | if `f` is `Cⁿ` near a fixed point `p` and `A` is invertible and hyperbolic, there are a neighborhood `N` of `p` and `Cⁿ` maps `hₛ : Eₛ → Eᵤ`, `hᵤ : Eᵤ → Eₛ`, vanishing with their derivatives at `0`, such that for every neighborhood `U ⊆ N` of `p`, the local stable and unstable sets of `f` in `U` are the graphs `p + x + hₛ x`, `p + y + hᵤ y` over neighborhoods of `0` |
+| [`Function.exists_localStableSet_localUnstableSet_eq_graph`](StableManifold/Theorem.lean#L239) | the same for one open `U ∋ p`, with `hₛ`, `hᵤ` stated `Cⁿ` near `0` |
+| [`Function.exists_nhds_localStableSet_localUnstableSet_eq_setOf`](StableManifold/Theorem.lean#L267) | for `U` inside a small neighborhood of `p`, the local stable set is the set of points whose forward orbit stays in `U`, and the local unstable set the set of points with a backward orbit in `U`: the convergence to `p` is automatic |
+| [`Function.exists_localStableSet_eq_graph_of_isCompl`](StableManifold/Local/StableSet.lean#L266) | the stable side, with one `hₛ` for every neighborhood `U` inside a small ball around `p`, assuming only `E = Eₛ ⊕ Eᵤ` (`A` may be singular) |
+| [`ContinuousLinearMap.isCompl_stableSubspace_unstableSubspace`](StableManifold/Linear/Splitting.lean#L400) | the hyperbolic splitting: `E = Eₛ ⊕ Eᵤ` when no complex eigenvalue of `A` has modulus `1` |
+| [`ContinuousLinearMap.exists_stableSubspace_unstableSubspace_eq_ker_aeval`](StableManifold/Linear/Splitting.lean#L384) | for such `A`, `Eₛ = ker pₛ(A)` and `Eᵤ = ker pᵤ(A)`, for the coprime factors `pₛ`, `pᵤ` of the characteristic polynomial with all complex roots inside, resp. outside, the unit circle |
 | [`StableManifold.Perturbation.bddOrbit_iff`](StableManifold/Perron/Graph.lean#L318), [`contDiff_graph`](StableManifold/Perron/Smooth.lean#L175) | for a globally small Lipschitz perturbation `A + φ` of a linear map with an exponential dichotomy, the points with bounded forward orbit form the graph of a Lipschitz map over `Eₛ` (in any real Banach space), `Cⁿ` when `φ` is (in finite dimension) |
-
-```lean
-theorem Function.exists_localStableSet_localUnstableSet_eq_graph {f : E → E} {p : E}
-    {W : Set E} {n : ℕ∞} (hn : 1 ≤ n) (hW : W ∈ 𝓝 p) (hf : ContDiffOn ℝ n f W)
-    (hfix : f p = p) (hinv : (fderiv ℝ f p).IsInvertible)
-    (hyp : (fderiv ℝ f p).IsHyperbolic) :
-    ∃ U ∈ 𝓝 p, IsOpen U ∧
-      (∃ Vs ∈ 𝓝 (0 : (fderiv ℝ f p).stableSubspace),
-        ∃ hs : (fderiv ℝ f p).stableSubspace → (fderiv ℝ f p).unstableSubspace,
-          ContDiffOn ℝ n hs Vs ∧ hs 0 = 0 ∧ fderiv ℝ hs 0 = 0 ∧
-          localStableSet f p U = (fun x ↦ p + ↑x + ↑(hs x)) '' Vs) ∧
-      (∃ Vu ∈ 𝓝 (0 : (fderiv ℝ f p).unstableSubspace),
-        ∃ hu : (fderiv ℝ f p).unstableSubspace → (fderiv ℝ f p).stableSubspace,
-          ContDiffOn ℝ n hu Vu ∧ hu 0 = 0 ∧ fderiv ℝ hu 0 = 0 ∧
-          localUnstableSet f p U = (fun y ↦ p + ↑y + ↑(hu y)) '' Vu)
-```
 
 `localStableSet f p U` is the set of points whose forward orbit stays in `U` and tends to `p`,
 `localUnstableSet f p U` the set of points with a backward orbit in `U` tending to `p`, and
@@ -62,13 +49,14 @@ the standard argument rather than one text ([sources](docs/DETAILS.md#sources)).
 ## Lean statement of record
 
 [`StableManifoldChallenge.lean`](StableManifoldChallenge.lean) states, with `sorry` and in
-Mathlib's vocabulary, four theorems in the namespace `StableManifoldChallenge`: `stable_manifold`
-(both sides), `hyperbolic_splitting`, and `stableSubspace_symm` and `localStableSet_symm`, which
-tie the backward-orbit definitions of the unstable subspace and of the local unstable set to the
-stable ones of the inverse. It carries a word-for-word copy of the definitions of
-[`StableManifold/Defs.lean`](StableManifold/Defs.lean), kept equal by
+Mathlib's vocabulary, five theorems in the namespace `StableManifoldChallenge`:
+`stable_manifold_forall_nhds` (both sides, for every small neighborhood), `stable_manifold` (both
+sides, for one open neighborhood), `hyperbolic_splitting`, and `stableSubspace_symm` and
+`localStableSet_symm`, which tie the backward-orbit definitions of the unstable subspace and of
+the local unstable set to the stable ones of the inverse. It carries a word-for-word copy of the
+definitions of [`StableManifold/Defs.lean`](StableManifold/Defs.lean), kept equal by
 [`scripts/sync_challenge_defs.py`](scripts/sync_challenge_defs.py).
-[`StableManifoldSolution.lean`](StableManifoldSolution.lean) proves the four theorems from the
+[`StableManifoldSolution.lean`](StableManifoldSolution.lean) proves the five theorems from the
 library; [`comparator.json`](comparator.json) configures Palomar's Comparator.
 
 ## Trust
@@ -89,7 +77,7 @@ the following.
 
 | Work | Content |
 | --- | --- |
-| [TauCeti](https://github.com/TauCetiProject/TauCeti/blob/ca32605ff53921fa0689dd312618b7cfaafa7e43/TauCeti/Analysis/ODE/LyapunovPerron/VectorField.lean#L331) (Lean 4, concurrent) | the stable and unstable manifolds of an equilibrium of a `Cⁿ` vector field (flows, not maps), assuming an exponential dichotomy, by a Lyapunov–Perron contraction |
+| [TauCeti](https://github.com/TauCetiProject/TauCeti/blob/ca32605ff53921fa0689dd312618b7cfaafa7e43/TauCeti/Analysis/ODE/LyapunovPerron/VectorField.lean#L331) (Lean 4, concurrent) | the stable and unstable manifolds of an equilibrium of a `Cⁿ` vector field (flows, not maps), by a Lyapunov–Perron contraction, from an exponential dichotomy that it derives from the absence of eigenvalues on the imaginary axis |
 | [lean-eval](https://github.com/leanprover/lean-eval/blob/8955681b9914d7ebc7d286414843021b7d6c9de1/LeanEval/Dynamics/StableUnstableManifolds.lean#L51) (Lean 4) | a benchmark statement, without a public proof: the local stable and unstable sets of a hyperbolic fixed point meet only at the point |
 | [Manzatto](https://github.com/Manzatto/conditioned-stochastic-stability-hyperbolic/blob/0cdb3050d873d931f9f522d60bf6521f7b3ef489/LeanShared/Dynamics/HyperbolicBackwardTransform.lean#L112), [PDEAtlas](https://github.com/Robertboy18/PDEAtlas/blob/64eb0329c66b121bf37cba88e58f1506b99002a2/PDE/Analysis/Evolution/ODE/InvariantGraph/Local.lean#L36) (Lean 4) | a Lyapunov–Perron transform on bounded sequences, for shadowing; a local center manifold for a diagonal linear part |
 
@@ -121,7 +109,7 @@ lake env lake comparator --config=comparator.json   # needs bubblewrap; expect "
 
 | Path | Content |
 | --- | --- |
-| [`StableManifold.lean`](StableManifold.lean) | imports the whole library: about 3,500 lines in 14 modules ([each module](docs/DETAILS.md#files)) |
+| [`StableManifold.lean`](StableManifold.lean) | imports the whole library: about 3,800 lines in 14 modules ([each module](docs/DETAILS.md#files)) |
 | [`StableManifold/Defs.lean`](StableManifold/Defs.lean), [`LocalSets.lean`](StableManifold/LocalSets.lean), [`Theorem.lean`](StableManifold/Theorem.lean) | the definitions in the statements; local sets; the main theorem |
 | [`StableManifold/Linear/`](StableManifold/Linear) | `Spectral`, `Subspaces`, `Splitting`, `HyperbolicSplitting`: the linear theory |
 | [`StableManifold/Sequence/`](StableManifold/Sequence) | `Superpose`, `SuperposeContDiff`: composition operators on bounded sequences |

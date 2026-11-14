@@ -10,8 +10,9 @@ public import StableManifold
 /-!
 # Solution
 
-Restates the four theorems of `StableManifoldChallenge.lean` word for word and proves them from
-the library (`Function.exists_localStableSet_localUnstableSet_eq_graph`,
+Restates the five theorems of `StableManifoldChallenge.lean` word for word and proves them from
+the library (`Function.exists_nhds_localStableSet_localUnstableSet_eq_graph`,
+`Function.exists_localStableSet_localUnstableSet_eq_graph`,
 `ContinuousLinearMap.isCompl_stableSubspace_unstableSubspace`,
 `ContinuousLinearMap.stableSubspace_symm`, `Function.localStableSet_symm_eq_localUnstableSet`).
 The definitions that the statements use are those of `StableManifold.Defs`, of which the
@@ -24,6 +25,29 @@ public section
 open Filter Topology
 
 namespace StableManifoldChallenge
+
+/-- **The stable manifold theorem**, for every small neighborhood, for a `Cⁿ` map (`1 ≤ n ≤ ∞`)
+near a fixed point `p` of a finite-dimensional real normed space, with invertible and hyperbolic
+derivative `A = Df(p)`: there are a neighborhood `N` of `p` and `Cⁿ` maps `hₛ : Eₛ → Eᵤ`,
+`hᵤ : Eᵤ → Eₛ` between the stable and unstable subspaces of `A`, vanishing with their derivatives
+at `0`, such that for every neighborhood `U` of `p` inside `N`, the local stable set of `f` in `U`
+is the graph `{p + x + hₛ x}` of `hₛ` over a neighborhood of `0` in `Eₛ`, and the local unstable
+set of `f` in `U` is the graph `{p + y + hᵤ y}` of `hᵤ` over a neighborhood of `0` in `Eᵤ`. -/
+theorem stable_manifold_forall_nhds {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {f : E → E} {p : E} {W : Set E} {n : ℕ∞} (hn : 1 ≤ n)
+    (hW : W ∈ 𝓝 p) (hf : ContDiffOn ℝ n f W) (hfix : f p = p)
+    (hinv : (fderiv ℝ f p).IsInvertible) (hyp : (fderiv ℝ f p).IsHyperbolic) :
+    ∃ N ∈ 𝓝 p,
+      ∃ hs : (fderiv ℝ f p).stableSubspace → (fderiv ℝ f p).unstableSubspace,
+        ContDiff ℝ n hs ∧ hs 0 = 0 ∧ fderiv ℝ hs 0 = 0 ∧
+      ∃ hu : (fderiv ℝ f p).unstableSubspace → (fderiv ℝ f p).stableSubspace,
+        ContDiff ℝ n hu ∧ hu 0 = 0 ∧ fderiv ℝ hu 0 = 0 ∧
+      ∀ U ∈ 𝓝 p, U ⊆ N →
+        (∃ Vs ∈ 𝓝 (0 : (fderiv ℝ f p).stableSubspace),
+          Function.localStableSet f p U = (fun x ↦ p + ↑x + ↑(hs x)) '' Vs) ∧
+        (∃ Vu ∈ 𝓝 (0 : (fderiv ℝ f p).unstableSubspace),
+          Function.localUnstableSet f p U = (fun y ↦ p + ↑y + ↑(hu y)) '' Vu) := by
+  exact Function.exists_nhds_localStableSet_localUnstableSet_eq_graph hn hW hf hfix hinv hyp
 
 /-- **The stable manifold theorem** for a `Cⁿ` map (`1 ≤ n ≤ ∞`) near a fixed point `p` of a
 finite-dimensional real normed space, with invertible and hyperbolic derivative `A = Df(p)`: there

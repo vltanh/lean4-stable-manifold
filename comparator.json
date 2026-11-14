@@ -2,6 +2,7 @@
   "challenge_module": "StableManifoldChallenge",
   "solution_module": "StableManifoldSolution",
   "theorem_names": [
+    "StableManifoldChallenge.stable_manifold_forall_nhds",
     "StableManifoldChallenge.stable_manifold",
     "StableManifoldChallenge.hyperbolic_splitting",
     "StableManifoldChallenge.stableSubspace_symm",
