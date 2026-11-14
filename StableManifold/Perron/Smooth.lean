@@ -1,0 +1,142 @@
+/-
+Copyright (c) 2026 The-Anh Vu-Le. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The-Anh Vu-Le
+-/
+module
+
+public import StableManifold.Perron.Graph
+public import StableManifold.Sequence.SuperposeContDiff
+public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
+public import Mathlib.Analysis.SpecificLimits.Normed
+
+/-!
+# Smoothness of the stable manifold
+
+Let `F x = A x + φ x` be a globally small Lipschitz perturbation (`StableManifold.Perturbation`)
+of a linear map with a hyperbolic splitting, on a finite-dimensional real normed space `E`. If `φ`
+is `Cⁿ` (`n ≤ ∞`), the map `graph` whose graph is the global stable manifold is `Cⁿ`
+(`StableManifold.Perturbation.contDiff_graph`).
+
+The bounded orbits solve `x - perronOp (φ ∘ x) = stableOrbit ξ`. The left side,
+`perronSub x = x - perronOp (superpose φ x)`, is a Lipschitz perturbation of the identity of the
+Banach space `ℕ →ᵇ E` by a `1/2`-Lipschitz map, hence a homeomorphism (`perronHomeomorph`, from
+`ApproximatesLinearOn.toHomeomorph`), and `orbitSeq = perronHomeomorph⁻¹ ∘ stableOrbit`
+(`orbitSeq_eq_perronHomeomorph_symm`). The superposition operator is `Cⁿ`
+(`StableManifold.contDiff_superpose`), so `perronSub` is `Cⁿ`, with derivative
+`1 - perronOp ∘ applySeq (Dφ ∘ x)` of the form `1 - T`, `‖T‖ ≤ 1/2`, invertible. The inverse
+function theorem in the form `Homeomorph.contDiff_symm` makes `perronHomeomorph⁻¹` of class `Cⁿ`,
+hence `orbitSeq` and `graph = (1 - P) ∘ eval₀ ∘ orbitSeq`. This replaces the fiber contraction
+theorem and the `C^r` section theorem of Hirsch, Pugh and Shub: smoothness of every order comes
+from the smoothness of the superposition operator on bounded sequences.
+
+## Proofs (plan)
+
+Size: 250–400 lines.
+
+* `approximatesLinearOn_perronSub`: `perronSub x - perronSub y - (x - y)` is
+  `-(perronOp (superpose φ x) - perronOp (superpose φ y))`, of norm
+  `≤ S.bound * L ‖x - y‖ ≤ ‖x - y‖ / 2` (`norm_perronOp_le`, `lipschitzWith_superpose`).
+* `subsingleton_or_lt_inv_nnnorm_refl`: on a nontrivial space `‖id‖₊ = 1`
+  (`ContinuousLinearMap.nnnorm_id`, `ContinuousLinearEquiv.coe_refl`).
+* `perronHomeomorph_apply`: by definition (`ApproximatesLinearOn.toHomeomorph`).
+* `orbitSeq_eq_perronHomeomorph_symm`: `perronHomeomorph (orbitSeq ξ) = stableOrbit ξ` is the fixed
+  point equation `perronMap_orbitSeq`; apply `Homeomorph.symm_apply_eq`.
+* `norm_perronOp_comp_applySeq_le`: `‖Dφ y‖ ≤ L`
+  (`norm_fderiv_le_of_lipschitz`), so `‖superpose (fderiv ℝ φ) x‖ ≤ L`
+  (`superpose_apply`, `BoundedContinuousFunction.norm_le`) and
+  `‖perronOp ∘L applySeq (…)‖ ≤ S.bound * L ≤ 1/2` (`ContinuousLinearMap.opNorm_comp_le`,
+  `norm_applySeq_le`).
+* `hasFDerivAt_perronSub`: `hasFDerivAt_superpose`, `HasFDerivAt.sub`, `hasFDerivAt_id`,
+  `ContinuousLinearMap.hasFDerivAt.comp`.
+* `contDiff_perronSub`: `contDiff_id.sub ((S.perronOp.contDiff).comp (contDiff_superpose hφ))`.
+* `contDiff_orbitSeq`: for `n = 0`, continuity (`dist_orbitSeq_le` gives Lipschitz,
+  `contDiff_zero`). For `n ≥ 1`: `Homeomorph.contDiff_symm` with the derivative
+  `f₀' x = ContinuousLinearEquiv.unitsEquiv ℝ _ (Units.oneSub T hT)`, `‖T‖ < 1`
+  (`Units.oneSub`), composed with the continuous linear map `stableOrbit`.
+* `contDiff_graph`: `graph = (1 - P) ∘ evalCLM ℝ 0 ∘ orbitSeq`
+  (`BoundedContinuousFunction.evalCLM`), a composition with continuous linear maps.
+-/
+
+@[expose] public section
+
+open Filter Topology
+open scoped NNReal BoundedContinuousFunction
+
+universe u
+
+namespace StableManifold
+
+open BoundedContinuousFunction ContinuousLinearMap
+
+/-- The identity of a normed space approximates itself with any constant `< 1`: the condition of
+`ApproximatesLinearOn.toHomeomorph` for `f' = id` and `c = 1/2`. -/
+theorem subsingleton_or_lt_inv_nnnorm_refl (V : Type*) [NormedAddCommGroup V] [NormedSpace ℝ V] :
+    Subsingleton V ∨
+      (1 / 2 : ℝ≥0) < ‖((ContinuousLinearEquiv.refl ℝ V).symm : V →L[ℝ] V)‖₊⁻¹ := by
+  rcases subsingleton_or_nontrivial V with h | h
+  · exact Or.inl h
+  · right
+    rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
+      ContinuousLinearMap.nnnorm_id, inv_one]
+    norm_num
+
+namespace Perturbation
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {A : E →L[ℝ] E} {S : A.HyperbolicSplitting} (F : Perturbation S)
+
+/-- `x ↦ x - perronOp (φ ∘ x)` on bounded sequences: the bounded orbit through `ξ` is the solution
+of `perronSub x = stableOrbit ξ`. -/
+noncomputable def perronSub (x : ℕ →ᵇ E) : ℕ →ᵇ E :=
+  x - S.perronOp (superpose F.φ x)
+
+/-- `perronSub` is a `1/2`-Lipschitz perturbation of the identity. -/
+theorem approximatesLinearOn_perronSub :
+    ApproximatesLinearOn F.perronSub
+      ((ContinuousLinearEquiv.refl ℝ (ℕ →ᵇ E) : (ℕ →ᵇ E) →L[ℝ] (ℕ →ᵇ E))) Set.univ (1 / 2) := by
+  sorry
+
+/-- `perronSub` as a homeomorphism of the space of bounded sequences. -/
+noncomputable def perronHomeomorph : (ℕ →ᵇ E) ≃ₜ (ℕ →ᵇ E) :=
+  F.approximatesLinearOn_perronSub.toHomeomorph F.perronSub
+    (subsingleton_or_lt_inv_nnnorm_refl (ℕ →ᵇ E))
+
+theorem perronHomeomorph_apply (x : ℕ →ᵇ E) : F.perronHomeomorph x = F.perronSub x :=
+  rfl
+
+/-- The bounded orbit through `ξ` is `perronHomeomorph⁻¹ (stableOrbit ξ)`. -/
+theorem orbitSeq_eq_perronHomeomorph_symm (ξ : E) :
+    F.orbitSeq ξ = F.perronHomeomorph.symm (S.stableOrbit ξ) := by
+  sorry
+
+/-- `‖perronOp ∘L applySeq (superpose (fderiv ℝ φ) x)‖ ≤ 1/2`: the derivative of `perronSub` is
+`1 - T` with `‖T‖ ≤ 1/2`. -/
+theorem norm_perronOp_comp_applySeq_le (x : ℕ →ᵇ E) :
+    ‖S.perronOp ∘L applySeq (superpose (fderiv ℝ F.φ) x)‖ ≤ 1 / 2 := by
+  sorry
+
+/-- The derivative of `perronSub`. -/
+theorem hasFDerivAt_perronSub (hφ : ContDiff ℝ 1 F.φ) (x : ℕ →ᵇ E) :
+    HasFDerivAt F.perronSub (1 - S.perronOp ∘L applySeq (superpose (fderiv ℝ F.φ) x)) x := by
+  sorry
+
+theorem contDiff_perronSub {n : ℕ∞} (hφ : ContDiff ℝ n F.φ) : ContDiff ℝ n F.perronSub := by
+  sorry
+
+/-- **The bounded orbits depend `Cⁿ` on the stable component.**
+
+Proof: `Homeomorph.contDiff_symm` for `perronHomeomorph`, whose derivative `1 - T`, `‖T‖ ≤ 1/2`,
+is invertible everywhere (`Units.oneSub`); continuity for `n = 0`. -/
+theorem contDiff_orbitSeq {n : ℕ∞} (hφ : ContDiff ℝ n F.φ) : ContDiff ℝ n F.orbitSeq := by
+  sorry
+
+/-- **The stable manifold is `Cⁿ`**: if `φ` is `Cⁿ` (`n ≤ ∞`), so is `graph`.
+
+Proof: `graph = (1 - P) ∘ evalCLM ℝ 0 ∘ orbitSeq` and `contDiff_orbitSeq`. -/
+theorem contDiff_graph {n : ℕ∞} (hφ : ContDiff ℝ n F.φ) : ContDiff ℝ n F.graph := by
+  sorry
+
+end Perturbation
+
+end StableManifold
