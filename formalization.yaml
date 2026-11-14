@@ -205,17 +205,20 @@ automation:
   methods:
     - method: "agent"
       models: ["claude-opus-5-5"]
-      framework: "Claude Code 2.1.318 (Claude Agent SDK)"
+      framework: "Claude Code 2.1.323 (Claude Agent SDK)"
       tool_setup: >-
         Claude Code agents wrote the Lean code (the statements, the proofs, the axiom audit and the
         Challenge/Solution pair) and the documentation. Lean builds, the axiom audit and
         Comparator were run locally.
       cost:
-        wall_time: "see README"
-        spend_usd: "see README"
+        wall_time: >-
+          2.8 hours elapsed (14 November 2026), 3.2 hours of agent working time in all: 14 agents
+          (the statements and module plan, ten proof agents working in parallel, the packaging,
+          an independent review and its fixes), 765 tool calls, 2.1 million output tokens
+        spend_usd: "not tracked"
         hardware: "local machine (Linux) for Lean builds; model via API"
       prompting_notes: "not recorded"
-  spend_usd: "see README"
+  spend_usd: "not tracked"
   notes: >-
     The-Anh Vu-Le maintains the project and is responsible for it. Claude Opus 5.5
     (claude-opus-5-5), in Claude Code, wrote the Lean code and the documentation. No person has
