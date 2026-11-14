@@ -62,8 +62,10 @@ the statements are the same here and in the library. It defines:
 * `𝓝 x` is the filter of neighborhoods of `x`: `V ∈ 𝓝 x` says that `V` is a neighborhood of `x`,
   not necessarily open.
 * `n : ℕ∞` with `1 ≤ n` is `1, 2, …` or `∞` (`⊤`). `ContDiffOn ℝ n f W`: `f` is of class `Cⁿ` on
-  `W`. With `W ∈ 𝓝 p`, `f` is `Cⁿ` near `p`; `f` is a total function `E → E`, and its values
-  outside `W` are arbitrary.
+  `W`. Mathlib's smoothness index lives in `WithTop ℕ∞`, whose top element `ω` means analytic;
+  `n` enters it through the coercion `ℕ∞ → WithTop ℕ∞`, so `∞` here is `C^∞` and the analytic
+  class is not covered. With `W ∈ 𝓝 p`, `f` is `Cⁿ` near `p`; `f` is a total function `E → E`,
+  and its values outside `W` are arbitrary.
 * `fderiv ℝ f p : E →L[ℝ] E` is the derivative `A = Df(p)` of `f` at `p`, which exists since `f` is
   `C¹` near `p`. `(fderiv ℝ f p).IsInvertible`: `A` is a linear isomorphism of `E`, so that `f` is
   a local diffeomorphism at `p`.
