@@ -45,9 +45,8 @@ Size: 300–450 lines.
 * `localStableSet_map_eq`: an orbit in the bounded `U` is bounded, so `(1 - P) x = graph x`
   (`bddOrbit_iff`); conversely such orbits tend to `0` (`tendsto_iterate`).
 * `stableGraph`: `graph ξ ∈ Eᵤ` since `P (graph ξ) = 0` (`proj_graph`, `proj_apply_eq_zero_iff`).
-  `contDiff_stableGraph`: `stableGraph = πᵤ ∘ graph ∘ ιₛ`, where `ιₛ = Eₛ.subtypeL` and `πᵤ` is a
-  continuous linear projection onto `Eᵤ` (for instance `Submodule.projectionOnto Eᵤ Eₛ` made
-  continuous by `LinearMap.toContinuousLinearMap`, with `S.isCompl`), identity on `Eᵤ`;
+  `contDiff_stableGraph`: `stableGraph = πᵤ ∘ graph ∘ ιₛ`, where `ιₛ = Eₛ.subtypeL` and `πᵤ` is
+  `1 - P` co-restricted to `Eᵤ` (`ContinuousLinearMap.codRestrict`), the identity on `Eᵤ`;
   `contDiff_graph`. `fderiv_stableGraph_zero`: the same composition and `hasFDerivAt_graph_zero`.
 * `exists_localStableSet_map_eq_image`: take `Vₛ = {ξ | ∀ n, F^[n] (ξ + stableGraph ξ) ∈ U}`; a
   point `x` of `localStableSet_map_eq` is `P x + graph (P x)` with `P x ∈ Eₛ`
@@ -71,6 +70,7 @@ namespace StableManifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
 /-- **Translation**: the local stable set of `f` at `p` is the translate by `p` of the local stable
 set of `x ↦ f (p + x) - p` at `0`.
 
@@ -78,7 +78,15 @@ Proof: `Function.localStableSet_conj` with `Homeomorph.addLeft p`. -/
 theorem localStableSet_eq_image_add (f : E → E) (p : E) (U : Set E) :
     Function.localStableSet f p U =
       (p + ·) '' Function.localStableSet (fun x ↦ f (p + x) - p) 0 ((p + ·) ⁻¹' U) := by
-  sorry
+  have h := Function.localStableSet_conj (Homeomorph.addLeft p) (fun x ↦ f (p + x) - p) 0
+    ((p + ·) ⁻¹' U)
+  have hf : (Homeomorph.addLeft p) ∘ (fun x ↦ f (p + x) - p) ∘ (Homeomorph.addLeft p).symm = f := by
+    funext y
+    simp [Homeomorph.addLeft_symm]
+  have hU : (Homeomorph.addLeft p) '' ((p + ·) ⁻¹' U) = U :=
+    image_preimage_eq U (Homeomorph.addLeft p).surjective
+  rw [hf, hU] at h
+  simpa using h
 
 namespace Perturbation
 
@@ -91,7 +99,13 @@ Proof: `bddOrbit_iff` and `tendsto_iterate`. -/
 theorem localStableSet_map_eq {U : Set E} (hU : Bornology.IsBounded U) :
     Function.localStableSet F.map 0 U =
       {x | (1 - S.proj) x = F.graph x ∧ ∀ n, F.map^[n] x ∈ U} := by
-  sorry
+  obtain ⟨M, hM⟩ := hU.exists_norm_le
+  ext x
+  constructor
+  · rintro ⟨hxU, -⟩
+    exact ⟨(F.bddOrbit_iff x).1 ⟨M, fun n ↦ hM _ (hxU n)⟩, hxU⟩
+  · rintro ⟨hx, hxU⟩
+    exact ⟨hxU, F.tendsto_iterate hx⟩
 
 /-- The graph map as a map from the stable to the unstable subspace. -/
 noncomputable def stableGraph (ξ : A.stableSubspace) : A.unstableSubspace :=
@@ -102,20 +116,40 @@ theorem coe_stableGraph (ξ : A.stableSubspace) : (F.stableGraph ξ : E) = F.gra
   rfl
 
 theorem stableGraph_zero : F.stableGraph 0 = 0 := by
-  sorry
+  ext
+  simp [F.graph_zero]
+
+/-- The projection `1 - P` onto the unstable subspace, as a map into the subspace. -/
+private noncomputable def unstableProj : E →L[ℝ] A.unstableSubspace :=
+  (1 - S.proj).codRestrict A.unstableSubspace fun x ↦ S.proj_apply_eq_zero_iff.1 <| by
+    rw [← mul_apply_eq_comp, S.proj_mul_one_sub_proj, zero_apply]
+
+/-- `stableGraph = πᵤ ∘ graph ∘ ιₛ`. -/
+private lemma stableGraph_eq_comp :
+    F.stableGraph = unstableProj (S := S) ∘ F.graph ∘ A.stableSubspace.subtypeL := by
+  funext ξ
+  ext
+  simp [unstableProj, F.proj_graph]
 
 /-- The typed graph map is `Cⁿ` when `φ` is.
 
 Proof: `stableGraph = πᵤ ∘ graph ∘ ιₛ` with continuous linear `πᵤ`, `ιₛ`; `contDiff_graph`. -/
 theorem contDiff_stableGraph {n : ℕ∞} (hφ : ContDiff ℝ n F.φ) : ContDiff ℝ n F.stableGraph := by
-  sorry
+  rw [F.stableGraph_eq_comp]
+  exact (unstableProj (S := S)).contDiff.comp
+    ((F.contDiff_graph hφ).comp A.stableSubspace.subtypeL.contDiff)
 
 /-- The typed graph map has derivative `0` at `0` when `φ` has.
 
 Proof: the same composition and `hasFDerivAt_graph_zero`. -/
 theorem fderiv_stableGraph_zero (hφ : HasFDerivAt F.φ (0 : E →L[ℝ] E) 0) :
     fderiv ℝ F.stableGraph 0 = 0 := by
-  sorry
+  have hg : HasFDerivAt F.graph (0 : E →L[ℝ] E) (A.stableSubspace.subtypeL 0) := by
+    simpa using F.hasFDerivAt_graph_zero hφ
+  have h := (unstableProj (S := S)).hasFDerivAt.comp (0 : A.stableSubspace)
+    (hg.comp (0 : A.stableSubspace) A.stableSubspace.subtypeL.hasFDerivAt)
+  rw [F.stableGraph_eq_comp, h.fderiv]
+  simp
 
 /-- **The local stable set of the globalized map**: for a bounded neighborhood `U` of `0`, the
 local stable set of `F|_U` at `0` is the graph of `stableGraph` over a neighborhood `Vₛ` of `0` in
@@ -128,7 +162,39 @@ theorem exists_localStableSet_map_eq_image {U : Set E} (hU : U ∈ 𝓝 0)
     ∃ Vs ∈ 𝓝 (0 : A.stableSubspace),
       Function.localStableSet F.map 0 U =
         (fun x : A.stableSubspace ↦ (x : E) + (F.stableGraph x : E)) '' Vs := by
-  sorry
+  have hon (ξ : A.stableSubspace) : S.proj ((ξ : E) + F.graph ξ) = ξ ∧
+      (1 - S.proj) ((ξ : E) + F.graph ξ) = F.graph ((ξ : E) + F.graph ξ) := by
+    have hP : S.proj ((ξ : E) + F.graph ξ) = ξ := by
+      rw [map_add, S.proj_apply_eq_self_iff.2 ξ.2, F.proj_graph, add_zero]
+    refine ⟨hP, ?_⟩
+    rw [← F.graph_proj ((ξ : E) + F.graph ξ), hP, sub_apply, one_apply_eq_self, hP]
+    abel
+  refine ⟨{ξ | ∀ n, F.map^[n] ((ξ : E) + F.graph ξ) ∈ U}, ?_, ?_⟩
+  · obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 hU
+    have hC := S.const_pos
+    refine mem_of_superset (ball_mem_nhds 0 (div_pos hr (mul_pos two_pos hC))) fun ξ hξ n ↦ ?_
+    apply hrU
+    rw [mem_ball_zero_iff] at hξ ⊢
+    have hξ' := (lt_div_iff₀ (mul_pos two_pos hC)).1 hξ
+    have hθ : S.decayRate ^ n ≤ 1 := pow_le_one₀ S.decayRate_pos.le S.decayRate_lt_one.le
+    calc ‖F.map^[n] ((ξ : E) + F.graph ξ)‖
+        ≤ 2 * S.const * S.decayRate ^ n * ‖S.proj ((ξ : E) + F.graph ξ)‖ :=
+          F.norm_iterate_le (hon ξ).2 n
+      _ = 2 * S.const * S.decayRate ^ n * ‖ξ‖ := by rw [(hon ξ).1]; rfl
+      _ ≤ 2 * S.const * 1 * ‖ξ‖ := by gcongr
+      _ < r := by linarith
+  · rw [F.localStableSet_map_eq hUb]
+    ext x
+    constructor
+    · rintro ⟨hx, hxU⟩
+      have hPx : S.proj x ∈ A.stableSubspace :=
+        S.proj_apply_eq_self_iff.1 (by rw [← mul_apply_eq_comp, S.proj_mul_proj])
+      have hxe : S.proj x + F.graph (S.proj x) = x := by
+        rw [F.graph_proj, ← hx, sub_apply, one_apply_eq_self]
+        abel
+      exact ⟨⟨S.proj x, hPx⟩, fun n ↦ by simpa [hxe] using hxU n, hxe⟩
+    · rintro ⟨ξ, hξ, rfl⟩
+      exact ⟨(hon ξ).2, hξ⟩
 
 end Perturbation
 
@@ -156,6 +222,48 @@ theorem exists_localStableSet_eq_graph_of_isCompl {f : E → E} {p : E} {W : Set
       ∀ U ∈ 𝓝 p, U ⊆ ball p δ →
         ∃ Vs ∈ 𝓝 (0 : (fderiv ℝ f p).stableSubspace),
           localStableSet f p U = (fun x ↦ p + ↑x + ↑(hs x)) '' Vs := by
-  sorry
+  obtain ⟨S⟩ := ContinuousLinearMap.nonempty_hyperbolicSplitting hsplit
+  -- the translated map `g x = f (p + x) - p`, `Cⁿ` near `0`, with derivative `Df(p)` at `0`
+  have hcont : Continuous (fun x : E ↦ p + x) := continuous_const.add continuous_id
+  have hpre {V : Set E} (hV : V ∈ 𝓝 p) : (p + ·) ⁻¹' V ∈ 𝓝 (0 : E) :=
+    hcont.continuousAt.preimage_mem_nhds (by simpa using hV)
+  have hg : ContDiffOn ℝ n (fun x ↦ f (p + x) - p) ((p + ·) ⁻¹' W) :=
+    (hf.comp (contDiff_const.add contDiff_id).contDiffOn fun _ hx ↦ hx).sub contDiffOn_const
+  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by
+    have : (0 : ℕ∞) < n := zero_lt_one.trans_le hn
+    exact_mod_cast this.ne'
+  have hgA : HasFDerivAt (fun x ↦ f (p + x) - p) (fderiv ℝ f p) 0 := by
+    have h1 : HasFDerivAt (fun x : E ↦ p + x) (ContinuousLinearMap.id ℝ E) 0 :=
+      (hasFDerivAt_id 0).const_add p
+    have h2 : HasFDerivAt f (fderiv ℝ f p) (p + 0) := by
+      rw [add_zero]
+      exact ((hf.contDiffAt hW).differentiableAt hn0).hasFDerivAt
+    simpa using (h2.comp 0 h1).sub_const p
+  -- the cut-off, with Lipschitz constant `1 / (2 S.bound)`
+  have hb := S.bound_pos
+  have hη : 0 < (1 / (2 * S.bound)).toNNReal := by simpa using hb
+  obtain ⟨δ, hδ, φ, hφ, hlip, hφ0, hdφ, hEq⟩ :=
+    StableManifold.exists_contDiff_lipschitzWith_eqOn_ball hn (hpre hW) hg (by simp [hfix]) hgA hη
+  let F : StableManifold.Perturbation S :=
+    { φ := φ
+      lip := (1 / (2 * S.bound)).toNNReal
+      lipschitzWith := hlip
+      map_zero := hφ0
+      lip_mul_bound_le := by
+        rw [Real.coe_toNNReal _ (by positivity)]
+        field_simp
+        rfl }
+  refine ⟨δ, hδ, F.stableGraph, F.contDiff_stableGraph hφ, F.stableGraph_zero,
+    F.fderiv_stableGraph_zero hdφ, fun U hU hUδ ↦ ?_⟩
+  have hUδ' : (p + ·) ⁻¹' U ⊆ ball 0 δ := fun x hx ↦ by
+    simpa [dist_eq_norm] using hUδ hx
+  obtain ⟨Vs, hVs, hVeq⟩ :=
+    F.exists_localStableSet_map_eq_image (hpre hU) (isBounded_ball.subset hUδ')
+  refine ⟨Vs, hVs, ?_⟩
+  have hcongr : localStableSet (fun x ↦ f (p + x) - p) 0 ((p + ·) ⁻¹' U) =
+      localStableSet F.map 0 ((p + ·) ⁻¹' U) :=
+    localStableSet_congr (hEq.mono hUδ')
+  rw [StableManifold.localStableSet_eq_image_add, hcongr, hVeq, image_image]
+  simp only [add_assoc]
 
 end Function
