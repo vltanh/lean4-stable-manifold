@@ -5,6 +5,7 @@ Authors: The-Anh Vu-Le
 -/
 module
 
+public import StableManifold.Defs
 public import Mathlib.Topology.Homeomorph.Defs
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import Mathlib.Order.Filter.AtTopBot.Basic
@@ -20,6 +21,9 @@ For a map `f : X → X` of a topological space, a point `p` and a set `U`:
 * `Function.localUnstableSet f p U`: the points having a backward orbit (`f (y (n + 1)) = y n`) in
   `U` that tends to `p` (the local stable set of `f⁻¹|_U` when `f` is invertible; the definition
   does not need an inverse).
+
+The two local sets are defined in `StableManifold.Defs`, with the other definitions in the
+statement of the stable manifold theorem; the global stable set is defined here.
 
 Elementary facts:
 
@@ -62,20 +66,9 @@ namespace Function
 
 variable {X : Type*} [TopologicalSpace X]
 
-/-- The **local stable set** of `f|_U` at `p`: the points `x` whose forward orbit `fⁿ(x)` stays in
-`U` and tends to `p`. (For the iterates of `f|_U` to be defined the orbit must stay in `U`.) -/
-def localStableSet (f : X → X) (p : X) (U : Set X) : Set X :=
-  {x | (∀ n : ℕ, f^[n] x ∈ U) ∧ Tendsto (fun n : ℕ ↦ f^[n] x) atTop (𝓝 p)}
-
 /-- The **global stable set** of `f` at `p`: the points whose forward orbit tends to `p`. -/
 def globalStableSet (f : X → X) (p : X) : Set X :=
   {x | Tendsto (fun n : ℕ ↦ f^[n] x) atTop (𝓝 p)}
-
-/-- The **local unstable set** of `f|_U` at `p`: the points `x` having a backward orbit `y`
-(`y 0 = x`, `f (y (n + 1)) = y n`) in `U` that tends to `p`. For an `f` invertible on `U` it is the
-local stable set of `f⁻¹|_U` (`Function.localStableSet_symm_eq_localUnstableSet`). -/
-def localUnstableSet (f : X → X) (p : X) (U : Set X) : Set X :=
-  {x | ∃ y : ℕ → X, y 0 = x ∧ (∀ n, y n ∈ U ∧ f (y (n + 1)) = y n) ∧ Tendsto y atTop (𝓝 p)}
 
 /-- A point of the local stable set lies in `U`. -/
 theorem mem_of_mem_localStableSet {f : X → X} {p : X} {U : Set X} {x : X}

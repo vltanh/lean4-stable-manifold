@@ -1,7 +1,7 @@
 name = "StableManifold"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["StableManifold"]
+defaultTargets = ["StableManifold", "StableManifoldChallenge", "StableManifoldSolution"]
 
 [leanOptions]
 pp.unicode.fun = true
@@ -18,3 +18,9 @@ rev = "v4.36.0-rc2"
 [[lean_lib]]
 name = "StableManifold"
 globs = ["StableManifold.*"]
+
+[[lean_lib]]
+name = "StableManifoldChallenge"
+
+[[lean_lib]]
+name = "StableManifoldSolution"

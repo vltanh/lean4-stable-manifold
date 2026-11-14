@@ -22,16 +22,20 @@ jobs:
           <(grep -E '^import all StableManifold\.' scripts/Audit.lean | sed 's/^import all //' | sort)
       # The audit also checks the axioms of the Challenge's theorems as StableManifoldSolution.lean
       # proves them.
-      # The Challenge defines nothing and states its theorems with Mathlib's definitions, so it
-      # carries no copy of shared definitions to check.
       - name: Audit axioms
         run: lake env lean scripts/Audit.lean
+      # The Challenge carries a copy of the definitions of StableManifold/Defs.lean, which
+      # Comparator needs to be the same constants as the library's.
+      - name: Check that the Challenge's copy of the shared definitions is current
+        run: python3 scripts/sync_challenge_defs.py --check
       - name: Check that no line exceeds 100 characters
         shell: python3 {0}
         run: |
           import glob, sys
-          files = ["StableManifold.lean", "StableManifoldChallenge.lean", "StableManifoldSolution.lean",
-                   *glob.glob("StableManifold/**/*.lean", recursive=True), *glob.glob("scripts/*.lean")]
+          files = ["StableManifold.lean", "StableManifoldChallenge.lean",
+                   "StableManifoldSolution.lean",
+                   *glob.glob("StableManifold/**/*.lean", recursive=True),
+                   *glob.glob("scripts/*.lean")]
           long = [f"{f}:{i}" for f in files
                   for i, line in enumerate(open(f, encoding="utf-8").read().split("\n"), 1)
                   if len(line) > 100]

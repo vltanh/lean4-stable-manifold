@@ -28,7 +28,7 @@ differentiable in the sup norm. No compact support or global bound on `φ` is ne
 * `StableManifold.contDiff_superpose`: `Cⁿ` regularity.
 
 `E` and `G` live in the same universe, so that the induction on `n` can pass from `φ : E → G` to
-`fderiv ℝ φ : E → (E →L[ℝ] G)` (that is all the applications need).
+`fderiv ℝ φ : E → (E →L[ℝ] G)` (`StableManifold.Perron.Smooth` uses it with `G = E`).
 
 ## Proofs (plan)
 

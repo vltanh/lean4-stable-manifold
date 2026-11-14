@@ -5,6 +5,7 @@ Authors: The-Anh Vu-Le
 -/
 module
 
+public import StableManifold.Defs
 public import StableManifold.LocalSets
 public import StableManifold.Linear.Spectral
 public import StableManifold.Linear.Subspaces

@@ -5,6 +5,7 @@ Authors: The-Anh Vu-Le
 -/
 module
 
+public import StableManifold.Defs
 public import StableManifold.Linear.Spectral
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
@@ -19,6 +20,9 @@ For a continuous linear map `A` of a real normed space:
   (`w 0 = v`, `A (w (n + 1)) = w n`, `w n → 0`);
 * `ContinuousLinearMap.IsHyperbolic A` (finite dimension): no complex eigenvalue of `A` has
   modulus `1`.
+
+The three are defined in `StableManifold.Defs`, with the other definitions in the statement of the
+stable manifold theorem.
 
 Both subspaces are `A`-invariant, and `A` maps the unstable subspace onto itself
 (`map_mem_stableSubspace`, `map_mem_unstableSubspace`, `exists_mem_unstableSubspace_apply_eq`).
@@ -55,35 +59,6 @@ namespace ContinuousLinearMap
 section General
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- The **stable subspace** of `A`: the vectors `v` with `Aⁿ v → 0`. For a hyperbolic `A` it is
-the sum of the generalized eigenspaces of the eigenvalues of modulus `< 1`. -/
-def stableSubspace (A : E →L[ℝ] E) : Submodule ℝ E where
-  carrier := {v | Tendsto (fun n : ℕ ↦ (A ^ n) v) atTop (𝓝 0)}
-  add_mem' {v w} hv hw := by
-    simp only [Set.mem_ofPred_eq, map_add] at hv hw ⊢
-    simpa using hv.add hw
-  zero_mem' := by simp
-  smul_mem' c v hv := by
-    simp only [Set.mem_ofPred_eq, map_smul] at hv ⊢
-    simpa using hv.const_smul c
-
-/-- The **unstable subspace** of `A`: the vectors `v` having a backward orbit tending to `0`
-(`w 0 = v`, `A (w (n + 1)) = w n`, `w n → 0`). For a hyperbolic `A` it is the sum of the
-generalized eigenspaces of the eigenvalues of modulus `> 1`. -/
-def unstableSubspace (A : E →L[ℝ] E) : Submodule ℝ E where
-  carrier := {v | ∃ w : ℕ → E, w 0 = v ∧ (∀ n, A (w (n + 1)) = w n) ∧
-    Tendsto w atTop (𝓝 0)}
-  add_mem' {v₁ v₂} h₁ h₂ := by
-    obtain ⟨w₁, h01, hA1, ht1⟩ := h₁
-    obtain ⟨w₂, h02, hA2, ht2⟩ := h₂
-    refine ⟨fun n ↦ w₁ n + w₂ n, by simp [h01, h02], fun n ↦ by simp [hA1, hA2], ?_⟩
-    simpa using ht1.add ht2
-  zero_mem' := ⟨fun _ ↦ 0, rfl, fun _ ↦ by simp, tendsto_const_nhds⟩
-  smul_mem' c v h := by
-    obtain ⟨w, h0, hA, ht⟩ := h
-    refine ⟨fun n ↦ c • w n, by simp [h0], fun n ↦ by simp [hA], ?_⟩
-    simpa using ht.const_smul c
 
 theorem mem_stableSubspace {A : E →L[ℝ] E} {v : E} :
     v ∈ A.stableSubspace ↔ Tendsto (fun n : ℕ ↦ (A ^ n) v) atTop (𝓝 0) :=
@@ -169,12 +144,6 @@ end General
 section FiniteDimensional
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- A linear map is **hyperbolic** if it has no eigenvalue of absolute value `1`: no complex root
-of its characteristic polynomial has modulus `1`. (A real operator may have non-real eigenvalues,
-so the eigenvalues are the complex roots of `LinearMap.charpoly`.) -/
-def IsHyperbolic (A : E →L[ℝ] E) : Prop :=
-  ∀ μ : ℂ, Polynomial.aeval μ (LinearMap.charpoly (A : E →ₗ[ℝ] E)) = 0 → ‖μ‖ ≠ 1
 
 /-- In finite dimension the stable and unstable subspaces are **disjoint**, for every `A`.
 
